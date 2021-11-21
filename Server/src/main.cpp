@@ -3,29 +3,19 @@
 
 int main()
 {
-    Connection *c = c->getInstance();
+    Connection *c;
     try
     {
-        c->makeConnection();
+        c = c->getInstance();
     }
     catch (const std::exception &e)
     {
         std::cout << e.what() << '\n';
     }
 
-    for (;;)
-    {
-        try
-        {
-            std::cout << c->read(c->client.sock) << '\n';
-            std::string sender = "hello from server";
-            c->send(c->client.sock, sender);
-        }
-        catch (const std::exception &e)
-        {
-            std::cout << e.what() << '\n';
-        }
-    }
+    int c1 = c->accept(), c2 = c->accept();
+    c->send(c1, "hello client 1");
+    c->send(c2, "hello client 2");
 
     return 0;
 }
