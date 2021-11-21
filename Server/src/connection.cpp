@@ -50,10 +50,12 @@ void Connection::send(int sock, const std::string &str)
 
 std::string Connection::read(int sock)
 {
-    char buff[Connection::BUFF_SIZE];
+    char buff[Connection::BUFF_SIZE]{};
     ssize_t reader = ::read(sock, buff, Connection::BUFF_SIZE);
     if ((size_t)reader != strlen(buff))
         throw std::runtime_error("Incorrect size read");
+
+    printf("Read: %s\n", buff);
 
     return buff;
 }
