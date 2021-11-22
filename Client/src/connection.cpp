@@ -1,18 +1,33 @@
 #include <arpa/inet.h>
 #include <cstring>
+#include <iostream>
 #include <netinet/in.h>
 #include <stdexcept>
+#include <string>
 #include <unistd.h>
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
 
 Connection *Connection::instance = nullptr;
+int Connection::serverFD = 0;
 
 Connection *Connection::getInstance()
 {
     if (!instance)
         instance = new Connection;
     return instance;
+}
+
+void Connection::run()
+{
+    makeConnection();
+
+    std::string name;
+    std::cin >> name;
+    send("hello im " + name);
+    std::cout << read() << '\n';
+
+    closeConnection();
 }
 
 void Connection::makeConnection()

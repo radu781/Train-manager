@@ -6,17 +6,21 @@ class Connection
 {
 public:
     static Connection *getInstance();
-    void makeConnection();
-    void closeConnection();
+    static void run();
 
-    void send(const std::string &str);
-    std::string read();
+    static int serverFD;
+
+private:
+    Connection() {}
+
+    static void makeConnection();
+    static void closeConnection();
+
+    static void send(const std::string &str);
+    static std::string read();
+
+    static Connection *instance;
 
     static const unsigned PORT = 8080;
     static const unsigned BUFF_SIZE = 1024;
-
-    int serverFD;
-private:
-    Connection() {}
-    static Connection *instance;
 };

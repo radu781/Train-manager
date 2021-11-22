@@ -1,25 +1,26 @@
 #pragma once
 
 #include <netinet/in.h>
+#include <array>
 #include <string>
-#include <vector>
+#include <thread>
 
 class Connection
 {
 public:
     static Connection *getInstance();
-    int accept();
-
-    void send(int sock, const std::string &str);
-    std::string read(int sock);
-
-    static const unsigned PORT = 8080;
-    static const unsigned BUFF_SIZE = 1024;
+    static void run();
 
     static int socketFD;
     // might not be safe to have this static
     static sockaddr_in address;
+
 private:
+    static int acceptIndividual();
+    static void runIndividual();
+
+    static void sendIndividual(int sock, const std::string &str);
+    static std::string readIndividual(int sock);
     struct Client
     {
         int sock;
@@ -27,7 +28,13 @@ private:
     };
 
     Connection();
-    static int makeConnection();
+    static void makeConnection();
     static Connection *instance;
-    std::vector<Client> clients;
+
+    static const size_t COUNT = 3;
+    std::array<Client, COUNT> clients;
+    static std::array<std::thread, COUNT> threads;
+    
+    static const unsigned PORT = 8080;
+    static const unsigned BUFF_SIZE = 1024;
 };
