@@ -17,7 +17,7 @@ private:
     static void closeConnection();
 
     static void send(const std::string &str);
-    static std::string read();
+    static void read();
 
     static Connection *instance;
 

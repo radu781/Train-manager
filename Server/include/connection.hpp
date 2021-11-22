@@ -20,7 +20,7 @@ private:
     static void runIndividual();
 
     static void sendIndividual(int sock, const std::string &str);
-    static std::string readIndividual(int sock);
+    static void readIndividual(int sock);
     struct Client
     {
         int sock;
@@ -29,6 +29,7 @@ private:
 
     Connection();
     static void makeConnection();
+    static void closeConnection(int sock);
     static Connection *instance;
 
     static const size_t COUNT = 3;

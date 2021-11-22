@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <stdexcept>
 #include <unistd.h>
+#include <thread>
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
 
@@ -45,6 +46,11 @@ void Connection::makeConnection()
         throw ConnectionException("Could not listen from the server!");
 }
 
+void Connection::closeConnection(int sock)
+{
+    close(sock);
+}
+
 int Connection::acceptIndividual()
 {
     int address_length = sizeof(address), sock;
@@ -59,13 +65,14 @@ void Connection::runIndividual()
     int sock = acceptIndividual();
     std::cout << "started " << std::this_thread::get_id() << '\n';
 
-    readIndividual(sock);
-    sendIndividual(sock, "hello");
+    std::thread reader(readIndividual, sock);
+    std::thread sender(sendIndividual, sock, "hello");
+    reader.join();
+    sender.join();
 }
 
 void Connection::run()
 {
-    int index = 0;
     for (auto &t : threads)
         t = std::thread(runIndividual);
 
@@ -77,20 +84,44 @@ void Connection::run()
 
 void Connection::sendIndividual(int sock, const std::string &str)
 {
-    ssize_t sender = ::send(sock, str.c_str(), strlen(str.c_str()), 0);
-    if ((size_t)sender != str.size())
-        throw std::runtime_error("Incorrect size sent");
+    for (;;)
+    {
+        ssize_t sender = ::send(sock, str.c_str(), strlen(str.c_str()), 0);
+        if ((size_t )sender == 0 || (size_t )sender == -1)
+        {
+            std::cout << "Lost connection to " << sock << '\n';
+            closeConnection(sock);
+            return;
+        }
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        if ((size_t)sender != str.size())
+        {
+            std::cout << (size_t)sender << " " << strlen(str.c_str()) << '\n';
+            throw std::runtime_error("Incorrect size sent");
+        }
 
-    printf("Server: [%s]\n", str.c_str());
+        printf("Server: %s\n", str.c_str());
+    }
 }
 
-std::string Connection::readIndividual(int sock)
+void Connection::readIndividual(int sock)
 {
-    char buff[BUFF_SIZE]{};
-    ssize_t reader = ::read(sock, buff, BUFF_SIZE);
-    if ((size_t)reader != strlen(buff))
-        throw std::runtime_error("Incorrect size read");
-        
-    std::cout << "From " << sock << ": " << buff << '\n';
-    return buff;
+    for (;;)
+    {
+        char buff[BUFF_SIZE]{};
+        ssize_t reader = ::read(sock, buff, BUFF_SIZE);
+        if ((size_t)reader == 0 || strlen(buff) == 0)
+        {
+            std::cout << "Lost connection to " << sock << '\n';
+            closeConnection(sock);
+            return;
+        }
+        if ((size_t)reader != strlen(buff))
+        {
+            std::cout << (size_t)reader << " " << strlen(buff) << '\n';
+            throw std::runtime_error("Incorrect size read");
+        }
+
+        std::cout << "From " << sock << ": " << buff << '\n';
+    }
 }

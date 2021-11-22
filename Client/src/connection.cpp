@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <unistd.h>
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
@@ -22,11 +23,11 @@ void Connection::run()
 {
     makeConnection();
 
-    std::string name;
-    std::cin >> name;
-    send("hello im " + name);
-    std::cout << read() << '\n';
-
+    std::thread reader(read);
+    std::thread sender(send, "");
+    
+    reader.join();
+    sender.join();
     closeConnection();
 }
 
@@ -53,20 +54,46 @@ void Connection::closeConnection()
 
 void Connection::send(const std::string &str)
 {
-    ssize_t sender = ::send(serverFD, str.c_str(), strlen(str.c_str()), 0);
-    if ((size_t)sender != str.size())
-        throw std::runtime_error("Incorrect size sent");
+    for (;;)
+    {
+        std::string name;
+        std::cin >> name;
+        ssize_t sender = ::send(serverFD, name.c_str(), strlen(name.c_str()), 0);
+        if ((size_t)sender == 0 || (size_t)sender == -1)
+        {
+            std::cout << "Lost conenction to server\n";
+            closeConnection();
+            return;
+        }
+        if ((size_t)sender != name.size())
+        {
+            std::cout << (size_t)sender << " " << strlen(name.c_str()) << '\n';
 
-    printf("Client: [%s]\n", str.c_str());
+            throw std::runtime_error("Incorrect size sent");
+        }
+
+        printf("Client: [%s]\n", name.c_str());
+    }
 }
 
-std::string Connection::read()
+void Connection::read()
 {
-    char buff[Connection::BUFF_SIZE]{};
-    ssize_t reader = ::read(serverFD, buff, 1024);
-    if ((size_t)reader != strlen(buff))
-        throw std::runtime_error("Incorrect size read");
-    printf("Read: %s\n", buff);
+    for (;;)
+    {
+        char buff[Connection::BUFF_SIZE]{};
+        ssize_t reader = ::read(serverFD, buff, 1024);
+        if ((size_t)reader == 0 || (size_t)reader == -1)
+        {
+            std::cout << "Lost connection to the server\n";
+            closeConnection();
+            return;
+        }
+        if ((size_t)reader != strlen(buff))
+        {
+            std::cout << (size_t)reader << " " << strlen(buff) << '\n';
 
-    return buff;
+            throw std::runtime_error("Incorrect size read");
+        }
+        printf("Read: %s\n", buff);
+    }
 }
