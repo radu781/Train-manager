@@ -3,6 +3,9 @@
 #include <stdexcept>
 #include <string>
 
+/**
+ * @brief Exception thrown upon failure to establish a connection
+ */
 class ConnectionException
     : public std::exception
 {

@@ -2,7 +2,6 @@
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
-#include <stdexcept>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -26,10 +25,10 @@ void Connection::run()
 
     std::thread reader(read);
     std::thread sender(send, "");
-    
+    if (!isConnected)
+        closeConnection();
     reader.join();
     sender.join();
-    closeConnection();
 }
 
 void Connection::makeConnection()
@@ -61,6 +60,8 @@ void Connection::closeConnection()
 
 void Connection::send(const std::string &str)
 {
+    static const unsigned BUFF_SIZE = 1024;
+
     if (isConnected)
         for (;;)
         {
@@ -88,11 +89,13 @@ void Connection::send(const std::string &str)
 
 void Connection::read()
 {
+    static const unsigned BUFF_SIZE = 1024;
+
     if (isConnected)
         for (;;)
         {
-            char buff[Connection::BUFF_SIZE]{};
-            ssize_t reader = ::read(serverFD, buff, 1024);
+            char buff[BUFF_SIZE]{};
+            ssize_t reader = ::read(serverFD, buff, BUFF_SIZE);
             if ((size_t)reader == 0 || (size_t)reader == -1)
             {
                 std::cout << "Lost connection to the server\n";

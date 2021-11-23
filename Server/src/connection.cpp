@@ -1,9 +1,8 @@
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
-#include <stdexcept>
-#include <unistd.h>
 #include <thread>
+#include <unistd.h>
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
 
@@ -30,7 +29,7 @@ void Connection::run()
 {
     std::thread setup([]()
                       {
-                          for (int i = 0;; i++)
+                          for (;;)
                           {
 
                               int sock = acceptIndividual();
@@ -115,6 +114,8 @@ void Connection::sendIndividual(Client *client, const std::string &str)
 
 void Connection::readIndividual(Client *client)
 {
+    static const unsigned BUFF_SIZE = 1024;
+    
     for (;;)
     {
         char buff[BUFF_SIZE]{};
