@@ -10,7 +10,7 @@
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;
 sockaddr_in Connection::address{};
-std::array<std::thread, 3> Connection::threads;
+std::unordered_map<int, Client *> Connection::clients;
 
 Connection *Connection::getInstance()
 {
@@ -24,6 +24,24 @@ Connection *Connection::getInstance()
 
 Connection::Connection()
 {
+}
+
+void Connection::run()
+{
+    std::thread setup([]()
+                      {
+                          for (int i = 0;; i++)
+                          {
+
+                              int sock = acceptIndividual();
+                              Client *client = new Client(sock);
+                              clients.insert({sock, client});
+                              clients[sock]->thread = std::thread(runIndividual, client);
+                          }
+                      });
+    setup.join();
+
+    std::cout << "joined all\n";
 }
 
 void Connection::makeConnection()
@@ -49,6 +67,14 @@ void Connection::makeConnection()
 void Connection::closeConnection(int sock)
 {
     close(sock);
+}
+
+void Connection::runIndividual(Client *client)
+{
+    std::thread reader(readIndividual, client->sock);
+    std::thread sender(sendIndividual, client->sock, "hello");
+    reader.join();
+    sender.join();
 }
 
 int Connection::acceptIndividual()

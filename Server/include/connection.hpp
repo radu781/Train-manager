@@ -1,9 +1,10 @@
 #pragma once
 
 #include <netinet/in.h>
-#include <array>
+#include <unordered_map>
 #include <string>
 #include <thread>
+#include "../include/client.hpp"
 
 class Connection
 {
@@ -16,26 +17,20 @@ public:
     static sockaddr_in address;
 
 private:
+    static void runIndividual(Client* client);
     static int acceptIndividual();
-    static void runIndividual();
-
     static void sendIndividual(int sock, const std::string &str);
     static void readIndividual(int sock);
-    struct Client
-    {
-        int sock;
-        int socketFD;
-    };
 
     Connection();
     static void makeConnection();
     static void closeConnection(int sock);
     static Connection *instance;
 
-    static const size_t COUNT = 3;
-    std::array<Client, COUNT> clients;
-    static std::array<std::thread, COUNT> threads;
-    
+    // Int is the client socket used for communication, 
+    // Client* is the actual client
+    static std::unordered_map<int, Client *> clients;
+
     static const unsigned PORT = 8080;
     static const unsigned BUFF_SIZE = 1024;
 };
