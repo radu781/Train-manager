@@ -9,7 +9,7 @@ public:
     static void run();
 
     static int serverFD;
-
+    static bool isConnected;
 private:
     Connection() {}
 

@@ -12,6 +12,6 @@ public:
     int socketFD;
     std::thread thread;
 
+    bool isConnected = true;
 private:
-    bool isConnected;
 };

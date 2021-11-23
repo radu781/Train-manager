@@ -64,17 +64,22 @@ void Connection::makeConnection()
         throw ConnectionException("Could not listen from the server!");
 }
 
-void Connection::closeConnection(int sock)
+void Connection::closeConnection(Client *client)
 {
-    close(sock);
+    close(client->sock);
+    client->isConnected = false;
 }
 
 void Connection::runIndividual(Client *client)
 {
-    std::thread reader(readIndividual, client->sock);
-    std::thread sender(sendIndividual, client->sock, "hello");
+    std::thread reader(readIndividual, client);
+    std::thread sender(sendIndividual, client, "hello");
+    std::cout << "Isconnected: " << client->isConnected << "\n";
     reader.join();
     sender.join();
+    if (!client->isConnected)
+        clients.erase(client->sock);
+    std::cout << "deleted\n";
 }
 
 int Connection::acceptIndividual()
@@ -86,60 +91,38 @@ int Connection::acceptIndividual()
     return sock;
 }
 
-void Connection::runIndividual()
-{
-    int sock = acceptIndividual();
-    std::cout << "started " << std::this_thread::get_id() << '\n';
-
-    std::thread reader(readIndividual, sock);
-    std::thread sender(sendIndividual, sock, "hello");
-    reader.join();
-    sender.join();
-}
-
-void Connection::run()
-{
-    for (auto &t : threads)
-        t = std::thread(runIndividual);
-
-    for (auto &t : threads)
-        t.join();
-
-    std::cout << "joined all\n";
-}
-
-void Connection::sendIndividual(int sock, const std::string &str)
+void Connection::sendIndividual(Client *client, const std::string &str)
 {
     for (;;)
     {
-        ssize_t sender = ::send(sock, str.c_str(), strlen(str.c_str()), 0);
-        if ((size_t )sender == 0 || (size_t )sender == -1)
+        ssize_t sender = ::send(client->sock, str.c_str(), strlen(str.c_str()), 0);
+        if ((size_t)sender == 0 || (size_t)sender == -1)
         {
-            std::cout << "Lost connection to " << sock << '\n';
-            closeConnection(sock);
+            std::cout << "Lost connection to " << client->sock << '\n';
+            closeConnection(client);
             return;
         }
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        std::this_thread::sleep_for(std::chrono::seconds(5));
         if ((size_t)sender != str.size())
         {
             std::cout << (size_t)sender << " " << strlen(str.c_str()) << '\n';
             throw std::runtime_error("Incorrect size sent");
         }
 
-        printf("Server: %s\n", str.c_str());
+        printf("Server->%d: %s\n", client->sock, str.c_str());
     }
 }
 
-void Connection::readIndividual(int sock)
+void Connection::readIndividual(Client *client)
 {
     for (;;)
     {
         char buff[BUFF_SIZE]{};
-        ssize_t reader = ::read(sock, buff, BUFF_SIZE);
+        ssize_t reader = ::read(client->sock, buff, BUFF_SIZE);
         if ((size_t)reader == 0 || strlen(buff) == 0)
         {
-            std::cout << "Lost connection to " << sock << '\n';
-            closeConnection(sock);
+            std::cout << "Lost connection to " << client->sock << '\n';
+            closeConnection(client);
             return;
         }
         if ((size_t)reader != strlen(buff))
@@ -148,6 +131,6 @@ void Connection::readIndividual(int sock)
             throw std::runtime_error("Incorrect size read");
         }
 
-        std::cout << "From " << sock << ": " << buff << '\n';
+        std::cout << "From " << client->sock << ": " << buff << '\n';
     }
 }

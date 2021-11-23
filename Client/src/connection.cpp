@@ -11,6 +11,7 @@
 
 Connection *Connection::instance = nullptr;
 int Connection::serverFD = 0;
+bool Connection::isConnected = false;
 
 Connection *Connection::getInstance()
 {
@@ -45,55 +46,65 @@ void Connection::makeConnection()
         throw ConnectionException("IPv4 address conversion error");
     if (connect(serverFD, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
         throw ConnectionException("Server connection error");
+
+    isConnected = true;
 }
 
 void Connection::closeConnection()
 {
-    close(serverFD);
+    if (isConnected)
+    {
+        close(serverFD);
+        isConnected = false;
+    }
 }
 
 void Connection::send(const std::string &str)
 {
-    for (;;)
-    {
-        std::string name;
-        std::cin >> name;
-        ssize_t sender = ::send(serverFD, name.c_str(), strlen(name.c_str()), 0);
-        if ((size_t)sender == 0 || (size_t)sender == -1)
+    if (isConnected)
+        for (;;)
         {
-            std::cout << "Lost conenction to server\n";
-            closeConnection();
-            return;
-        }
-        if ((size_t)sender != name.size())
-        {
-            std::cout << (size_t)sender << " " << strlen(name.c_str()) << '\n';
+            char buff[BUFF_SIZE]{};
+            std::cin.getline(buff, BUFF_SIZE);
+            std::cin.clear();
+            fflush(stdin);
+            ssize_t sender = ::send(serverFD, buff, strlen(buff), 0);
+            if ((size_t)sender == -1)
+            {
+                std::cout << "Lost conenction to server\n";
+                closeConnection();
+                return;
+            }
+            if ((size_t)sender != strlen(buff))
+            {
+                std::cout << (size_t)sender << " " << strlen(buff) << '\n';
 
-            throw std::runtime_error("Incorrect size sent");
-        }
+                throw std::runtime_error("Incorrect size sent");
+            }
 
-        printf("Client: [%s]\n", name.c_str());
-    }
+            printf("Client: %s\n", buff);
+        }
 }
 
 void Connection::read()
 {
-    for (;;)
-    {
-        char buff[Connection::BUFF_SIZE]{};
-        ssize_t reader = ::read(serverFD, buff, 1024);
-        if ((size_t)reader == 0 || (size_t)reader == -1)
+    if (isConnected)
+        for (;;)
         {
-            std::cout << "Lost connection to the server\n";
-            closeConnection();
-            return;
-        }
-        if ((size_t)reader != strlen(buff))
-        {
-            std::cout << (size_t)reader << " " << strlen(buff) << '\n';
+            char buff[Connection::BUFF_SIZE]{};
+            ssize_t reader = ::read(serverFD, buff, 1024);
+            if ((size_t)reader == 0 || (size_t)reader == -1)
+            {
+                std::cout << "Lost connection to the server\n";
+                closeConnection();
+                return;
+            }
+            if ((size_t)reader != strlen(buff))
+            {
+                std::cout << (size_t)reader << " " << strlen(buff) << '\n';
 
-            throw std::runtime_error("Incorrect size read");
+                throw std::runtime_error("Incorrect size read");
+            }
+            printf("Read: %s\n", buff);
         }
-        printf("Read: %s\n", buff);
-    }
 }

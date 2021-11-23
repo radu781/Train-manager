@@ -19,12 +19,12 @@ public:
 private:
     static void runIndividual(Client* client);
     static int acceptIndividual();
-    static void sendIndividual(int sock, const std::string &str);
-    static void readIndividual(int sock);
+    static void sendIndividual(Client* client, const std::string &str);
+    static void readIndividual(Client* client);
 
     Connection();
     static void makeConnection();
-    static void closeConnection(int sock);
+    static void closeConnection(Client* client);
     static Connection *instance;
 
     // Int is the client socket used for communication, 
