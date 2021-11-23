@@ -62,52 +62,19 @@ void Connection::send(const std::string &str)
 {
     static const unsigned BUFF_SIZE = 1024;
 
-    if (isConnected)
-        for (;;)
-        {
-            char buff[BUFF_SIZE]{};
-            std::cin.getline(buff, BUFF_SIZE);
-            std::cin.clear();
-            fflush(stdin);
-            ssize_t sender = ::send(serverFD, buff, strlen(buff), 0);
-            if ((size_t)sender == -1)
-            {
-                std::cout << "Lost conenction to server\n";
-                closeConnection();
-                return;
-            }
-            if ((size_t)sender != strlen(buff))
-            {
-                std::cout << (size_t)sender << " " << strlen(buff) << '\n';
+    for (; isConnected;)
+    {
+        char buff[BUFF_SIZE]{};
+        std::cin.getline(buff, BUFF_SIZE);
+        std::cin.clear();
+        fflush(stdin);
 
-                throw std::runtime_error("Incorrect size sent");
-            }
-
-            printf("Client: %s\n", buff);
-        }
+        IOManager::send(serverFD, buff);
+    }
 }
 
 void Connection::read()
 {
-    static const unsigned BUFF_SIZE = 1024;
-
-    if (isConnected)
-        for (;;)
-        {
-            char buff[BUFF_SIZE]{};
-            ssize_t reader = ::read(serverFD, buff, BUFF_SIZE);
-            if ((size_t)reader == 0 || (size_t)reader == -1)
-            {
-                std::cout << "Lost connection to the server\n";
-                closeConnection();
-                return;
-            }
-            if ((size_t)reader != strlen(buff))
-            {
-                std::cout << (size_t)reader << " " << strlen(buff) << '\n';
-
-                throw std::runtime_error("Incorrect size read");
-            }
-            printf("Read: %s\n", buff);
-        }
+    for (; isConnected;)
+        IOManager::read(serverFD);
 }

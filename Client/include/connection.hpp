@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "../include/iomanager.hpp"
 
 /**
  * @brief Singleton class that manages the client to server connection
@@ -23,7 +24,7 @@ public:
 
     static int serverFD;
     static bool isConnected;
-
+    friend class IOManager;
 private:
     Connection() {}
 
