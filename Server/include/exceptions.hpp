@@ -16,3 +16,17 @@ public:
 private:
     std::string exception;
 };
+
+/**
+ * @brief Exception thrown when the server starts up 
+ */
+class ServerSetupException
+    : public std::exception
+{
+public:
+    ServerSetupException(const std::string &exception);
+    const char *what() const throw();
+
+private:
+    std::string exception;
+};

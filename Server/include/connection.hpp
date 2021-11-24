@@ -4,7 +4,7 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
-#include "../include/client.hpp"
+#include "client.hpp"
 
 /**
  * @brief Singleton class that manages the server to clients connections
@@ -86,16 +86,16 @@ private:
      * @brief The (only) instance object
      */
     static Connection *instance;
-    
+
     /**
      * @brief Hash table that stores all clients, indexed by their socket
      * value
      */
     static std::unordered_map<int, Client *> clients;
 
-        /**
-         * @brief Arbitrarily chosen port (same as on the client) to run the
-         * server on
-         */
+    /**
+     * @brief Arbitrarily chosen port (same as on the client) to run the
+     * server on
+     */
     static const unsigned PORT = 8080;
 };

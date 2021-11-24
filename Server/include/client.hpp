@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <thread>
 
 /**
@@ -17,5 +18,6 @@ public:
     std::thread thread;
 
     bool isConnected = true;
+    std::string username;
 private:
 };
