@@ -5,6 +5,7 @@
 #include <thread>
 #include <unordered_map>
 #include "client.hpp"
+#include "iomanager.hpp"
 
 /**
  * @brief Singleton class that manages the server to clients connections
@@ -29,7 +30,7 @@ public:
     static int socketFD;
     // might not be safe to have this static, but it worked so far
     static sockaddr_in address;
-
+    friend class IOManager;
 private:
     /**
      * @brief Client main function that calls readIndividual() and

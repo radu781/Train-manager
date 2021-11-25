@@ -3,7 +3,7 @@ LIBS = -lpthread
 BUILD_DIR = build
 BIN_DIR = bin
 
-build: dir connection.o exceptions.o client.o main.o
+build: dir connection.o exceptions.o client.o iomanager.o main.o
 	g++ build/*.o -o $(BIN_DIR)/main $(LIBS)
 dir:
 	-mkdir $(BIN_DIR)
@@ -14,6 +14,8 @@ exceptions.o:
 	g++ $(FLAGS) src/exceptions.cpp -o $(BUILD_DIR)/exceptions.o $(LIBS)
 client.o:
 	g++ $(FLAGS) src/client.cpp -o $(BUILD_DIR)/client.o $(LIBS)
+iomanager.o:
+	g++ $(FLAGS) src/iomanager.cpp -o $(BUILD_DIR)/iomanager.o $(LIBS)
 main.o:
 	g++ $(FLAGS) src/main.cpp -o $(BUILD_DIR)/main.o $(LIBS)
 
