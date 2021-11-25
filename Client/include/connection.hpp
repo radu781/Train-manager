@@ -23,7 +23,6 @@ public:
     static void run();
 
     static int serverFD;
-    static bool isConnected;
     friend class IOManager;
 private:
     Connection() {}
@@ -36,7 +35,8 @@ private:
 
     /**
      * @brief Closes the connection with the server and sets a flag needed for
-     * the main run() thread
+     * the main run() thread. An exception should be thrown shortly after this
+     * is called.
      */
     static void closeConnection();
 

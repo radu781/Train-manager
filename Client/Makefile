@@ -3,7 +3,7 @@ LIBS = -lpthread
 BUILD_DIR = build
 BIN_DIR = bin
 
-build: dir connection.o exceptions.o commands.o iomanager.o main.o
+build: dir connection.o exceptions.o iomanager.o main.o
 	g++ build/*.o -o $(BIN_DIR)/main $(LIBS)
 dir:
 	-mkdir $(BIN_DIR)

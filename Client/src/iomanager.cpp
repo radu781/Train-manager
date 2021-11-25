@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <unistd.h>
+#include <utility>
 #include "../include/iomanager.hpp"
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
@@ -24,27 +25,37 @@ std::string IOManager::read(int fd)
         throw std::runtime_error("Incorrect size read");
     }
 
-    std::cout << "From server: " << buff << '\n';
     return buff;
 }
 
 void IOManager::send(int fd, const std::string &data)
 {
-    const size_t dataSize = data.size() * sizeof(data[0]);
+    auto[sendMe, sendMeSize] = allocateSender(data);
+    ssize_t sender = ::send(fd, sendMe, sendMeSize, 0);
+    delete[] sendMe;
 
-    ssize_t sender = ::send(fd, data.c_str(), dataSize, 0);
     if (sender == -1)
     {
-        std::cout << "Lost conenction to server\n";
+        throw ConnectionException("Lost connection to the server");
         Connection::closeConnection();
-        return;
     }
-    if (sender != dataSize)
+    if ((size_t)sender != sendMeSize)
     {
-        std::cout << (size_t)sender << " " << dataSize << '\n';
-
+        std::cout << (size_t)sender << " " << sendMeSize << '\n';
         throw std::runtime_error("Incorrect size sent");
     }
 
     std::cout << "Client: " << data << '\n';
+}
+
+std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)
+{
+    static const char *padding = "-=-";
+
+    const size_t bytes = str.size() * sizeof(str[0]) + 1;
+    const size_t dataSize = bytes + strlen(padding) + 12;
+    char *allocated = new char[dataSize]{};
+    snprintf(allocated, dataSize, "%lu%s%s", bytes, padding, str.c_str());
+
+    return {allocated, dataSize};
 }
