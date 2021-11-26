@@ -10,6 +10,7 @@ Log *Log::getInstance()
     if (instance == nullptr)
     {
         instance = new Log;
+        remove("log.txt");
         out = std::ofstream("log.txt", std::ios_base::app);
     }
     return instance;

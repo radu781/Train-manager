@@ -2,6 +2,7 @@
 #include <iostream>
 #include <netinet/in.h>
 #include <thread>
+#include <mutex>
 #include <unistd.h>
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
@@ -66,9 +67,12 @@ void Connection::makeConnection()
 
 void Connection::closeConnection(Client *client)
 {
+    std::mutex m;
+    m.lock();
     close(client->sock);
     client->isConnected = false;
     LOG_COMMUNICATION("Lost connection to", false, 3);
+    m.unlock();
 }
 
 void Connection::runIndividual(Client *client)
@@ -96,46 +100,17 @@ int Connection::acceptIndividual()
 
 void Connection::sendIndividual(Client *client, const std::string &str)
 {
-    for (;;)
+    while (client->isConnected)
     {
-        ssize_t sender = ::send(client->sock, str.c_str(), strlen(str.c_str()), 0);
-        if ((size_t)sender == 0 || (size_t)sender == -1)
-        {
-            std::cout << "Lost connection to " << client->sock << '\n';
-            closeConnection(client);
-            return;
-        }
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-        if ((size_t)sender != str.size())
-        {
-            std::cout << (size_t)sender << " " << strlen(str.c_str()) << '\n';
-            throw std::runtime_error("Incorrect size sent");
-        }
-
-        printf("Server->%d: %s\n", client->sock, str.c_str());
+        IOManager::send(client, str);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
 void Connection::readIndividual(Client *client)
 {
-    static const unsigned BUFF_SIZE = 1024;
-    
-    for (;;)
+    while (client->isConnected)
     {
-        char buff[BUFF_SIZE]{};
-        ssize_t reader = ::read(client->sock, buff, BUFF_SIZE);
-        if ((size_t)reader == 0 || strlen(buff) == 0)
-        {
-            std::cout << "Lost connection to " << client->sock << '\n';
-            closeConnection(client);
-            return;
-        }
-        if ((size_t)reader != strlen(buff))
-        {
-            std::cout << (size_t)reader << " " << strlen(buff) << '\n';
-            throw std::runtime_error("Incorrect size read");
-        }
-
-        std::cout << "From " << client->sock << ": " << buff << '\n';
+        std::string fromClient = IOManager::read(client);
     }
 }
