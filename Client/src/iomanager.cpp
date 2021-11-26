@@ -50,12 +50,33 @@ void IOManager::send(int fd, const std::string &data)
 
 std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)
 {
-    static const char *padding = "-=-";
-
     const size_t bytes = str.size() * sizeof(str[0]) + 1;
-    const size_t dataSize = bytes + strlen(padding) + 12;
+    const size_t dataSize = bytes + strlen(PADDING) + 12;
     char *allocated = new char[dataSize]{};
-    snprintf(allocated, dataSize, "%lu%s%s", bytes, padding, str.c_str());
+    snprintf(allocated, dataSize, "%lu%s%s", bytes, PADDING, str.c_str());
 
     return {allocated, dataSize};
+}
+
+std::pair<char *, size_t> IOManager::allocateReader(const char* buff)
+{
+    auto [msg, size] = split(buff);
+    char *wholeMessage = new char[size]{};
+    strcpy(wholeMessage, msg);
+
+    return {wholeMessage, size};
+}
+
+std::pair<const char *, size_t> IOManager::split(const char *str)
+{
+    const char *paddingStart = strstr(str, PADDING);
+    std::cout << str << '\n';
+    if (paddingStart == nullptr)
+        throw std::runtime_error("Padding not found");
+
+    char length[BUFF_SIZE + 1]{};
+    for (int i = 0; i < paddingStart - str; i++)
+        length[i] = str[i];
+
+    return {paddingStart + strlen(PADDING), atoi(length)};
 }

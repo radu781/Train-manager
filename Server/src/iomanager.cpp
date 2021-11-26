@@ -21,6 +21,8 @@ std::string IOManager::read(Client *client)
         Connection::closeConnection(client);
         return "";
     }
+    if (strlen(buff) == 0)
+        return "";
     // if (strlen(buff123) != reader123)
     // {
     //     std::cout << (size_t)reader123 << " " << strlen(buff123) << '\n';
@@ -36,7 +38,12 @@ std::string IOManager::read(Client *client)
         return out;
     }
 
-    ::read(client->sock, wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
+    reader = ::read(client->sock, wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
+    if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
+    {
+        Connection::closeConnection(client);
+        return "";
+    }
 
     std::string out = wholeMessage;
     delete[] wholeMessage;
@@ -45,17 +52,19 @@ std::string IOManager::read(Client *client)
 
 void IOManager::send(Client *client, const std::string &data)
 {
-    ssize_t sender = ::send(client->sock, data.c_str(), data.size(), 0);
+    auto [sendMe, sendMeSize] = allocateSender(data);
+    ssize_t sender = ::send(client->sock, sendMe, sendMeSize, 0);
+    delete[] sendMe;
+
     if ((size_t)sender == 0 || (size_t)sender == (size_t)-1)
     {
         std::cout << "Lost connection to " << client->sock << '\n';
         Connection::closeConnection(client);
         return;
     }
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    if ((size_t)sender != data.size())
+    if ((size_t)sender != sendMeSize)
     {
-        std::cout << (size_t)sender << " " << data.size() << '\n';
+        std::cout << (size_t)sender << " " << sendMeSize << '\n';
         throw std::runtime_error("Incorrect size sent");
     }
 
@@ -64,7 +73,12 @@ void IOManager::send(Client *client, const std::string &data)
 
 std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)
 {
-    return {};
+    const size_t bytes = str.size() * sizeof(str[0]) + 1;
+    const size_t dataSize = bytes + strlen(PADDING) + BUFF_SIZE;
+    char *allocated = new char[dataSize]{};
+    snprintf(allocated, dataSize, "%lu%s%s", bytes, PADDING, str.c_str());
+
+    return {allocated, dataSize};
 }
 
 std::pair<char *, size_t> IOManager::allocateReader(const char *buff)
