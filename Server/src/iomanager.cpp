@@ -8,6 +8,7 @@
 #include "../include/client.hpp"
 #include "../include/connection.hpp"
 #include "../include/iomanager.hpp"
+#include "../include/logger.hpp"
 
 std::string IOManager::read(Client *client)
 {
@@ -17,7 +18,7 @@ std::string IOManager::read(Client *client)
     ssize_t reader123 = ::read(client->sock, buff, BUFF_SIZE);
     if ((size_t)reader123 == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
     {
-        std::cout << "Lost connection to {READ} " << client->sock << '\n';
+        LOG_COMMUNICATION("Lost connection to", false, 3);
         Connection::closeConnection(client);
         return "";
     }
@@ -35,18 +36,20 @@ std::string IOManager::read(Client *client)
     {
         std::string out = wholeMessage;
         delete[] wholeMessage;
+        LOG_COMMUNICATION(out, true, client->sock);
         return out;
     }
 
     reader = ::read(client->sock, wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
     if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
     {
+        LOG_COMMUNICATION("Lost connection to", false, 3);
         Connection::closeConnection(client);
         return "";
     }
 
     std::string out = wholeMessage;
-    delete[] wholeMessage;
+    LOG_COMMUNICATION(out, true, client->sock);
     return out;
 }
 
@@ -58,7 +61,7 @@ void IOManager::send(Client *client, const std::string &data)
 
     if ((size_t)sender == 0 || (size_t)sender == (size_t)-1)
     {
-        std::cout << "Lost connection to " << client->sock << '\n';
+        LOG_COMMUNICATION("Lost connection to", false, 3);
         Connection::closeConnection(client);
         return;
     }
@@ -68,7 +71,7 @@ void IOManager::send(Client *client, const std::string &data)
         throw std::runtime_error("Incorrect size sent");
     }
 
-    printf("Server->%d: %s\n", client->sock, data.c_str());
+    LOG_COMMUNICATION(data, true, client->sock);
 }
 
 std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)

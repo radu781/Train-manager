@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
+#include "../include/logger.hpp"
 
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;
@@ -40,7 +41,7 @@ void Connection::run()
                       });
     setup.join();
 
-    std::cout << "joined all\n";
+    LOG_DEBUG("all joined");
 }
 
 void Connection::makeConnection()
@@ -67,6 +68,7 @@ void Connection::closeConnection(Client *client)
 {
     close(client->sock);
     client->isConnected = false;
+    LOG_COMMUNICATION("Lost connection to", false, 3);
 }
 
 void Connection::runIndividual(Client *client)
@@ -77,8 +79,10 @@ void Connection::runIndividual(Client *client)
     reader.join();
     sender.join();
     if (!client->isConnected)
+    {
         clients.erase(client->sock);
-    std::cout << "deleted\n";
+        LOG_DEBUG("Client erased");
+    }
 }
 
 int Connection::acceptIndividual()
