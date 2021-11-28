@@ -7,6 +7,7 @@
 #include "../include/connection.hpp"
 #include "../include/exceptions.hpp"
 #include "../include/logger.hpp"
+#include "../include/command.hpp"
 
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;
@@ -78,10 +79,9 @@ void Connection::closeConnection(Client *client)
 void Connection::runIndividual(Client *client)
 {
     std::thread reader(readIndividual, client);
-    std::thread sender(sendIndividual, client, "hello");
-    std::cout << "Isconnected: " << client->isConnected << "\n";
+    // std::thread sender(sendIndividual, client, "hello");
     reader.join();
-    sender.join();
+    // sender.join();
     if (!client->isConnected)
     {
         clients.erase(client->sock);
@@ -101,10 +101,10 @@ int Connection::acceptIndividual()
 
 void Connection::sendIndividual(Client *client, const std::string &str)
 {
-    while (client->isConnected)
+    if (client->isConnected)
     {
         IOManager::send(client, str);
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        // std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
 
@@ -113,5 +113,7 @@ void Connection::readIndividual(Client *client)
     while (client->isConnected)
     {
         std::string fromClient = IOManager::read(client);
+        Command cmd(fromClient);
+        sendIndividual(client, cmd.execute());
     }
 }

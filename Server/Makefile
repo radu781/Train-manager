@@ -4,7 +4,8 @@ LIBS = -lpthread
 BUILD_DIR = build
 BIN_DIR = bin
 
-build: dir connection.o exceptions.o client.o iomanager.o logger.o main.o
+build: dir connection.o exceptions.o client.o iomanager.o logger.o command.o main.o
+	g++ -g build/*.o -o $(BIN_DIR)/main $(LIBS)
 dir:
 	-mkdir $(BIN_DIR)
 	-mkdir $(BUILD_DIR)
@@ -18,6 +19,8 @@ iomanager.o:
 	g++ $(FLAGS) src/iomanager.cpp -o $(BUILD_DIR)/iomanager.o $(LIBS)
 logger.o:
 	g++ $(FLAGS) src/logger.cpp -o $(BUILD_DIR)/logger.o $(LIBS)
+command.o:
+	g++ $(FLAGS) src/command.cpp -o $(BUILD_DIR)/command.o $(LIBS)
 main.o:
 	g++ $(FLAGS) src/main.cpp -o $(BUILD_DIR)/main.o $(LIBS)
 

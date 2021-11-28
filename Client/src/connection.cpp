@@ -69,6 +69,7 @@ void Connection::read()
     for (;;)
     {
         std::string str = IOManager::read(serverFD);
-        std::cout << str << '\n';
+        if (str != "")
+            std::cout << str << '\n';
     }
 }
