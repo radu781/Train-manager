@@ -39,7 +39,7 @@ void Log::debug(const std::string &str, const char *function, const char *file, 
 {
 #ifdef ENABLE_DEBG_LOGGING
     if (function && file && line)
-        out << file << ":" << line << ": debug:" << str << std::endl;
+        out << file << ":" << line << ": debug: " << str << std::endl;
     else
         out << "Debug info only: \"" << str << "\"" << std::endl;
 #endif

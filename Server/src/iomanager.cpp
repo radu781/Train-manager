@@ -14,11 +14,9 @@ std::string IOManager::read(Client *client)
 {
     char buff[BUFF_SIZE]{};
 
-    // read BUFF_SIZE bytes from client
-    ssize_t reader123 = ::read(client->sock, buff, BUFF_SIZE);
-    if ((size_t)reader123 == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
+    ssize_t reader = ::read(client->sock, buff, BUFF_SIZE);
+    if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
     {
-        LOG_COMMUNICATION("Lost connection to", false, 3);
         Connection::closeConnection(client);
         return "";
     }
@@ -36,25 +34,26 @@ std::string IOManager::read(Client *client)
     {
         std::string out = wholeMessage;
         delete[] wholeMessage;
-        LOG_COMMUNICATION(out, true, client->sock);
+        LOG_COMMUNICATION(out, false, client->sock);
         return out;
     }
 
     reader = ::read(client->sock, wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
     if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
     {
-        LOG_COMMUNICATION("Lost connection to", false, 3);
         Connection::closeConnection(client);
         return "";
     }
 
     std::string out = wholeMessage;
-    LOG_COMMUNICATION(out, true, client->sock);
+    LOG_COMMUNICATION(out, false, client->sock);
     return out;
 }
 
 void IOManager::send(Client *client, const std::string &data)
 {
+    if (data == "")
+        return;
     auto [sendMe, sendMeSize] = allocateSender(data);
     ssize_t sender = ::send(client->sock, sendMe, sendMeSize, 0);
     delete[] sendMe;

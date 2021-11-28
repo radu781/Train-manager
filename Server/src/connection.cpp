@@ -71,7 +71,7 @@ void Connection::closeConnection(Client *client)
     m.lock();
     close(client->sock);
     client->isConnected = false;
-    LOG_COMMUNICATION("Lost connection to", false, 3);
+    LOG_COMMUNICATION("[Lost connection]", false, client->sock);
     m.unlock();
 }
 
@@ -95,6 +95,7 @@ int Connection::acceptIndividual()
     if ((sock = ::accept(socketFD, (sockaddr *)&address, (socklen_t *)&address_length)) < 0)
         throw ConnectionException("Could not accept");
 
+    LOG_COMMUNICATION("[Client accepted]", false, sock);
     return sock;
 }
 

@@ -10,27 +10,43 @@
 
 std::string IOManager::read(int fd)
 {
-    static const unsigned BUFF_SIZE = 1024;
+    static const unsigned BUFF_SIZE = 15;
     char buff[BUFF_SIZE]{};
 
     ssize_t reader = ::read(fd, buff, BUFF_SIZE);
+    if (strcmp(buff, "") == 0)
+        return "";
     if (reader == 0 || reader == -1)
     {
         Connection::closeConnection();
         throw ConnectionException("Lost connection to the server");
     }
-    if ((size_t)reader != strlen(buff))
+    auto [wholeMessage, size] = allocateReader(buff);
+
+    if (size < BUFF_SIZE - strlen(PADDING))
     {
-        std::cout << (size_t)reader << " " << strlen(buff) << '\n';
-        throw std::runtime_error("Incorrect size read");
+        std::string out = wholeMessage;
+        delete[] wholeMessage;
+        return out;
     }
 
-    return buff;
+    reader = ::read(fd, wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
+    if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
+    {
+        Connection::closeConnection();
+        return "";
+    }
+
+    std::string out = wholeMessage;
+    return out;
 }
 
 void IOManager::send(int fd, const std::string &data)
 {
-    auto[sendMe, sendMeSize] = allocateSender(data);
+    if (data == "")
+        return;
+
+    auto [sendMe, sendMeSize] = allocateSender(data);
     ssize_t sender = ::send(fd, sendMe, sendMeSize, 0);
     delete[] sendMe;
 
@@ -44,8 +60,6 @@ void IOManager::send(int fd, const std::string &data)
         std::cout << (size_t)sender << " " << sendMeSize << '\n';
         throw std::runtime_error("Incorrect size sent");
     }
-
-    std::cout << "Client: " << data << '\n';
 }
 
 std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)
@@ -58,7 +72,7 @@ std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)
     return {allocated, dataSize};
 }
 
-std::pair<char *, size_t> IOManager::allocateReader(const char* buff)
+std::pair<char *, size_t> IOManager::allocateReader(const char *buff)
 {
     auto [msg, size] = split(buff);
     char *wholeMessage = new char[size]{};
