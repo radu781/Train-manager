@@ -1,2 +1,2 @@
-#include "../include/client.hpp"
+#include <communication/client.hpp>
 

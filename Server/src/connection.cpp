@@ -4,10 +4,11 @@
 #include <thread>
 #include <mutex>
 #include <unistd.h>
-#include "../include/connection.hpp"
-#include "../include/exceptions.hpp"
-#include "../include/logger.hpp"
-#include "../include/command.hpp"
+#include <communication/command.hpp>
+#include <communication/connection.hpp>
+#include <communication/iomanager.hpp>
+#include <utils/exceptions.hpp>
+#include <utils/logger.hpp>
 
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;

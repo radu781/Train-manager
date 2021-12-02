@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "../include/iomanager.hpp"
+#include "iomanager.hpp"
 
 /**
  * @brief Singleton class that manages the client to server connection

@@ -39,6 +39,8 @@ private:
      */
     std::pair<size_t, uint8_t> validate();
 
+    std::string today();
+    
     /**
      * @brief Vector containing the user command main call and arguments
      */

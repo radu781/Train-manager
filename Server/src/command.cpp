@@ -2,7 +2,7 @@
 #include <iostream>
 #include <sstream>
 #include <utility>
-#include "../include/command.hpp"
+#include <communication/command.hpp>
 
 Command::Command(const std::string &str)
 {
@@ -60,11 +60,20 @@ std::string Command::execute()
     if (cmd == (size_t)-1)
         return "Command " + command[0] + " is (currently) not supported";
     if (argc == (uint8_t)Errors::TOO_MANY_ARGS)
-        return "Command " + command[0] + " has " + (char)(commands[cmd].argCount + '0' - OPTIONAL_OFFSET) + " optional arguments, " + (char)(command.size() - 1 + '0') + " provided";
+        return "Command " + command[0] + " has " +
+               (char)(commands[cmd].argCount + '0' - OPTIONAL_OFFSET) +
+               " optional arguments, " + (char)(command.size() - 1 + '0') + " provided";
     if (argc == (uint8_t)Errors::WRONG_ARG_COUNT)
-        return "Command " + command[0] + " has " + (char)(commands[cmd].argCount + '0') + " arguments, " + (char)(command.size() - 1 + '0') + " provided";
+        return "Command " + command[0] + " has " +
+               (char)(commands[cmd].argCount + '0') + " arguments, " +
+               (char)(command.size() - 1 + '0') + " provided";
 
     return "Valid command " + command[0];
+}
+
+std::string Command::today()
+{
+    return "";
 }
 
 std::string Command::trim(std::string str)

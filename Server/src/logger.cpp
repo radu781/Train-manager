@@ -1,6 +1,6 @@
 #include <cassert>
 #include <fstream>
-#include "../include/logger.hpp"
+#include <utils/logger.hpp>
 
 Log *Log::instance = nullptr;
 std::ofstream Log::out;

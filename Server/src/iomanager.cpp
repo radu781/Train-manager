@@ -5,10 +5,10 @@
 #include <thread>
 #include <utility>
 #include <unistd.h>
-#include "../include/client.hpp"
-#include "../include/connection.hpp"
-#include "../include/iomanager.hpp"
-#include "../include/logger.hpp"
+#include <communication/client.hpp>
+#include <communication/connection.hpp>
+#include <communication/iomanager.hpp>
+#include <utils/logger.hpp>
 
 std::string IOManager::read(Client *client)
 {
@@ -47,6 +47,7 @@ std::string IOManager::read(Client *client)
 
     std::string out = wholeMessage;
     LOG_COMMUNICATION(out, false, client->sock);
+    delete[] wholeMessage;
     return out;
 }
 

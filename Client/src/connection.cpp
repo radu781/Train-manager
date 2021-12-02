@@ -5,8 +5,8 @@
 #include <string>
 #include <thread>
 #include <unistd.h>
-#include "../include/connection.hpp"
-#include "../include/exceptions.hpp"
+#include <communication/connection.hpp>
+#include <utils/exceptions.hpp>
 
 Connection *Connection::instance = nullptr;
 int Connection::serverFD = 0;

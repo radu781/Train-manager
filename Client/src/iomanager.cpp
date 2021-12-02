@@ -4,9 +4,9 @@
 #include <string>
 #include <unistd.h>
 #include <utility>
-#include "../include/iomanager.hpp"
-#include "../include/connection.hpp"
-#include "../include/exceptions.hpp"
+#include <communication/connection.hpp>
+#include <communication/iomanager.hpp>
+#include <utils/exceptions.hpp>
 
 std::string IOManager::read(int fd)
 {

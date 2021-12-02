@@ -1,4 +1,4 @@
-#include "../include/exceptions.hpp"
+#include <utils/exceptions.hpp>
 
 ConnectionException::ConnectionException(const std::string &exception)
     : exception(exception) {}

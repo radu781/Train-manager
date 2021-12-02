@@ -5,7 +5,6 @@
 #include <thread>
 #include <unordered_map>
 #include "client.hpp"
-#include "iomanager.hpp"
 
 /**
  * @brief Singleton class that manages the server to clients connections

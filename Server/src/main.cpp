@@ -1,5 +1,4 @@
-#include <iostream>
-#include "../include/connection.hpp"
+#include <communication/connection.hpp>
 
 int main()
 {
