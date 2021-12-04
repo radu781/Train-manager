@@ -38,6 +38,7 @@ void Connection::run()
 
                               int sock = acceptIndividual();
                               Client *client = new Client(sock);
+                              IOManager::send(client, Command::motd());
                               clients.insert({sock, client});
                               clients[sock]->thread = std::thread(runIndividual, client);
                           }

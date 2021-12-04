@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <xml/pugixml.hpp>
 
 class Command
 {
@@ -22,6 +23,14 @@ public:
      */
     std::string execute();
 
+    /**
+     * @brief Get a message that is only sent to clients when they connect to
+     * the server
+     *
+     * \return Message of the day
+     */
+    static std::string motd();
+
 private:
     /**
      * @brief Trims the string by removing leading and trailing whitespace
@@ -39,17 +48,51 @@ private:
      */
     std::pair<size_t, uint8_t> validate();
 
+    /**
+     * @brief Get all trains from [start] to [destination], where
+     * start == command[1] and end == command[2] after being parsed by
+     * execute()
+     *
+     * \return String containing the start and destination times of the trains
+     */
     std::string today();
     
+
+    /**
+     * @brief Command used to print information about all available commands
+     *
+     * \return All available commands including fixed and optional arguments
+     * and their description
+     */
+    static std::string help();
+
+    /**
+     * @brief Load the local .xml file or download it if not found locally
+     */
+    static void getFile();
+
+    /**
+     * @brief Change the format of time from seconds to a more human readable
+     * one
+     *
+     * \param seconds Time in seconds as found in the .xml file used (the
+     * hour:minutes:seconds format is compacted into seconds)
+     * \return String that follows the format [hours]h[minutes]m[seconds]s
+     */
+    static std::string getTime(int seconds);
+
     /**
      * @brief Vector containing the user command main call and arguments
      */
     std::vector<std::string> command;
 
+    static pugi::xml_document doc;
+
     enum class CommandTypes
     {
-        LOGIN,
-        REGISTER,
+        TODAY,
+        DEPARTURES,
+        ARRIVALS,
         HELP,
         COUNT
     };
@@ -65,7 +108,8 @@ private:
 
     };
     const uint8_t OPTIONAL_OFFSET = 100;
-    const Args commands[(size_t)CommandTypes::COUNT] = {{"login", 1},
-                                                        {"register", 1},
+    const Args commands[(size_t)CommandTypes::COUNT] = {{"today", 2},
+                                                        {"departures", 1},
+                                                        {"arrivals", 1},
                                                         {"help", OPTIONAL_OFFSET + 1}};
 };
