@@ -28,6 +28,13 @@ public:
     static void send(Client *client, const std::string &data);
 
 private:
+    /**
+     * @brief Allocates a buffer that contains the message byte size, a padding
+     * string and the message itself that will be sent to a client
+     *
+     * \param str String used to create the buffer
+     * \return Pair of buffer and its length
+     */
     static std::pair<char *, size_t> allocateSender(const std::string &str);
 
     /**

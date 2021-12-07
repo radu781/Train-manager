@@ -47,7 +47,7 @@ void IOManager::send(int fd, const std::string &data)
         return;
 
     auto [sendMe, sendMeSize] = allocateSender(data);
-    ssize_t sender = ::send(fd, sendMe, sendMeSize, 0);
+    ssize_t sender = ::write(fd, sendMe, sendMeSize);
     delete[] sendMe;
 
     if (sender == -1)

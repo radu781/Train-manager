@@ -5,10 +5,9 @@ It simulates a real life Client-Server architecture, where the clients request d
 ### Functionality
 The clients send commands to the server.
 Currently supported commands:
-- _command validation_
+- `today`: information about the current day's trains schedule
 
 Commands to be added:
-- `today`: information about the current day's trains schedule
 - `departures`: information about departures in the upcoming hour, including trains that are late
 - `arrivals`: information about arrivals in the upcoming hour, including trains that are late
 
@@ -35,6 +34,9 @@ cd Train-manager
 # This will use all debug optimizations
 make
 
+cd Server
 ./Server/bin/main
+# Run this in a different terminal
+cd ../Client
 ./Client/bin/main
 ```

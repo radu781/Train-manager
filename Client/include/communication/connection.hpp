@@ -17,7 +17,7 @@ public:
     static Connection *getInstance();
 
     /**
-     * @brief Main infinite loop, calls read() and send() in separate threads,
+     * @brief Main infinite loop, calls read() and write() in separate threads,
      * while the main one closes the connection if needed
      */
     static void run();

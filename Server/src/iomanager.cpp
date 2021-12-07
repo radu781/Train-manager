@@ -50,7 +50,7 @@ void IOManager::send(Client *client, const std::string &data)
     if (data == "")
         return;
     auto [sendMe, sendMeSize] = allocateSender(data);
-    ssize_t sender = ::send(client->sock, sendMe, sendMeSize, 0);
+    ssize_t sender = ::write(client->sock, sendMe, sendMeSize);
     delete[] sendMe;
 
     if ((size_t)sender == 0 || (size_t)sender == (size_t)-1)
