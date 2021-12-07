@@ -14,12 +14,13 @@
 #ifndef SOURCE_PUGIXML_CPP
 #define SOURCE_PUGIXML_CPP
 
+#include "pc.h"
 #include <xml/pugixml.hpp>
 
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+// #include <stdio.h>
+// #include <string.h>
+// #include <assert.h>
 #include <limits.h>
 
 #ifdef PUGIXML_WCHAR_MODE
@@ -34,7 +35,7 @@
 #ifndef PUGIXML_NO_STL
 #	include <istream>
 #	include <ostream>
-#	include <string>
+// #	include <string>
 #endif
 
 // For placement new

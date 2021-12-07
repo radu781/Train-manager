@@ -1,14 +1,8 @@
-#include <cstring>
-#include <iostream>
+#include "pc.h"
 #include <netinet/in.h>
-#include <thread>
-#include <mutex>
-#include <unistd.h>
 #include <communication/command.hpp>
 #include <communication/connection.hpp>
 #include <communication/iomanager.hpp>
-#include <utils/exceptions.hpp>
-#include <utils/logger.hpp>
 
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;

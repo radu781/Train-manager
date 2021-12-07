@@ -1,13 +1,7 @@
-#include <algorithm>
+#include "pc.h"
 #include <ctime>
-#include <cstring>
-#include <iostream>
-#include <filesystem>
-#include <mutex>
 #include <sstream>
-#include <utility>
 #include <communication/command.hpp>
-#include <utils/logger.hpp>
 #include <xml/pugixml.hpp>
 
 pugi::xml_document Command::doc{};

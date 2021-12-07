@@ -1,14 +1,8 @@
+#include "pc.h"
 #include <arpa/inet.h>
-#include <cstring>
-#include <iostream>
-#include <string>
-#include <thread>
-#include <utility>
-#include <unistd.h>
 #include <communication/client.hpp>
 #include <communication/connection.hpp>
 #include <communication/iomanager.hpp>
-#include <utils/logger.hpp>
 
 std::string IOManager::read(Client *client)
 {
