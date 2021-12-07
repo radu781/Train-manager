@@ -10,6 +10,7 @@
 
 Connection *Connection::instance = nullptr;
 int Connection::serverFD = 0;
+bool Connection::connected = false;
 
 Connection *Connection::getInstance()
 {
@@ -42,23 +43,32 @@ void Connection::makeConnection()
         throw ConnectionException("IPv4 address conversion error");
     if (connect(serverFD, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
         throw ConnectionException("Server connection error");
+
+    connected = true;
 }
 
 void Connection::closeConnection()
 {
     close(serverFD);
+    connected = false;
 }
 
 void Connection::send(const std::string &str)
 {
     static const unsigned BUFF_SIZE = 1024;
 
-    for (;;)
+    while (connected)
     {
         char buff[BUFF_SIZE]{};
         std::cin.getline(buff, BUFF_SIZE);
         std::cin.clear();
         fflush(stdin);
+        if (strcmp(buff, "quit") == 0)
+        {
+            shutdown(serverFD, SHUT_RDWR);
+            close(serverFD);
+            break;
+        }
 
         IOManager::send(serverFD, buff);
     }
@@ -66,7 +76,7 @@ void Connection::send(const std::string &str)
 
 void Connection::read()
 {
-    for (;;)
+    while (connected)
     {
         std::string str = IOManager::read(serverFD);
         if (str != "")

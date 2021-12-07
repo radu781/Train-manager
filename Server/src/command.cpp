@@ -142,10 +142,37 @@ std::string Command::motd()
     time_t now = ::time(0);
     tm *ltm = localtime(&now);
 
-    char buff[128];
+    char buff[128], weekDay[12];
+    switch (ltm->tm_wday)
+    {
+    case 1:
+        strcpy(weekDay, "Monday");
+        break;
+    case 2:
+        strcpy(weekDay, "Tuesday");
+        break;
+    case 3:
+        strcpy(weekDay, "Wednesday");
+        break;
+    case 4:
+        strcpy(weekDay, "Thursday");
+        break;
+    case 5:
+        strcpy(weekDay, "Friday");
+        break;
+    case 6:
+        strcpy(weekDay, "Saturday");
+        break;
+    case 7:
+        strcpy(weekDay, "Sunday");
+        break;
+    default:
+        strcpy(weekDay, "???");
+        break;
+    }
     sprintf(buff, "---Welcome to Train Manager---\n\
-Today is %d/%d/%d(%d)",
-            ltm->tm_mday, ltm->tm_mon, ltm->tm_year + 1900, ltm->tm_wday);
+Today is %d/%d/%d(%s)",
+            ltm->tm_mday, ltm->tm_mon + 1, ltm->tm_year + 1900, weekDay);
 
     return buff;
 }
@@ -170,18 +197,14 @@ void Command::getFile()
         m.unlock();
     }
 
-    // find a way to only to this once
-    if (!doc.empty())
-    {
-        LOG_DEBUG("Loaded xml");
-        doc.load_file(localPath.c_str());
-    }
+    LOG_DEBUG("Loaded xml");
+    doc.load_file(localPath.c_str());
 }
 
 std::string Command::getTime(int seconds)
 {
     char buff[16];
-    sprintf(buff, "%dh%dm%ds", seconds / 3600, seconds / 3600 % 60, seconds % 60);
+    sprintf(buff, "%.2d:%.2d", seconds / 3600, seconds % 3600 / 60);
     return buff;
 }
 

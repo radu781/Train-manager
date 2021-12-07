@@ -11,14 +11,14 @@ public:
     /**
      * @brief Constructs a new Command object, trims it and appends the
      * arguments to the command vector
-     * 
+     *
      * \param str String input from user (exactly as sent)
      */
     Command(const std::string &str);
 
     /**
      * @brief Actually execute the command
-     * 
+     *
      * \return Execution output, both if the command if valid or not
      */
     std::string execute();
@@ -30,11 +30,12 @@ public:
      * \return Message of the day
      */
     static std::string motd();
+    friend class Connection;
 
 private:
     /**
      * @brief Trims the string by removing leading and trailing whitespace
-     * 
+     *
      * \param str Deep copy of string to be trimmed
      * \return Trimmed string
      */
@@ -42,7 +43,7 @@ private:
 
     /**
      * @brief Check if the command and arguments inputted by the client are valid
-     * 
+     *
      * \return Pair of <command index (if found, otherwise -1), bool (true if
      * the argument count matches that of the command, false otherwise>
      */
@@ -105,7 +106,6 @@ private:
     {
         WRONG_ARG_COUNT = -2,
         TOO_MANY_ARGS
-
     };
     const uint8_t OPTIONAL_OFFSET = 100;
     const Args commands[(size_t)CommandTypes::COUNT] = {{"today", 2},

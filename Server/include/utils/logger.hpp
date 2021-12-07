@@ -7,6 +7,7 @@
 #pragma once
 
 #include <fstream>
+#include <mutex>
 #include <string>
 
 #define LOG_COMMUNICATION(str, bool, int) Log::getInstance()->communication( \
@@ -24,14 +25,14 @@ class Log
 public:
     /**
      * @brief Get the instance object
-     * 
+     *
      * \return The instance object
      */
     static Log *getInstance();
 
     /**
      * @brief Log information for communication purposes (server to client)
-     * 
+     *
      * \param str Data to be logged
      * \param sending True if data is sent, false if data is received
      * \param who File descriptor of who receives or is sent data
@@ -42,7 +43,7 @@ public:
     /**
      * @brief Log information for debugging purposes (raw messages, clients
      * connecting or disconnecting, etc.)
-     * 
+     *
      * \param str Data to be logged
      * \param function Function name where this is called
      * \param file File name where this is called
@@ -63,4 +64,9 @@ private:
      * @brief Stream used to log the messages
      */
     static std::ofstream out;
+
+    /**
+     * @brief Mutex used to lock the logging operations (file write)
+     */
+    static std::mutex m;
 };

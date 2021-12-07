@@ -96,7 +96,6 @@ std::pair<char *, size_t> IOManager::allocateReader(const char *buff)
 std::pair<const char *, size_t> IOManager::split(const char *str)
 {
     const char *paddingStart = strstr(str, PADDING);
-    std::cout << str << '\n';
     if (paddingStart == nullptr)
         throw std::runtime_error("Padding not found");
 

@@ -27,6 +27,7 @@ Connection *Connection::getInstance()
 
 Connection::Connection()
 {
+    Command::getFile();
 }
 
 void Connection::run()
@@ -35,14 +36,13 @@ void Connection::run()
                       {
                           for (;;)
                           {
-
                               int sock = acceptIndividual();
                               Client *client = new Client(sock);
                               IOManager::send(client, Command::motd());
+
                               clients.insert({sock, client});
                               clients[sock]->thread = std::thread(runIndividual, client);
-                          }
-                      });
+                          } });
     setup.join();
 
     LOG_DEBUG("all joined");
@@ -62,7 +62,8 @@ void Connection::makeConnection()
     address.sin_port = htons(PORT);
 
     if (bind(socketFD, (struct sockaddr *)&address, sizeof(address)) < 0)
-        throw ConnectionException("Could not attach socket to port (bind)");
+        throw ConnectionException("Could not attach socket to port (bind), \
+possible cause: Address already in use");
 
     if (listen(socketFD, 3) < 0)
         throw ConnectionException("Could not listen from the server!");

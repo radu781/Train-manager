@@ -10,7 +10,7 @@
 
 std::string IOManager::read(int fd)
 {
-    static const unsigned BUFF_SIZE = 15;
+    static const unsigned BUFF_SIZE = 12 + strlen(PADDING);
     char buff[BUFF_SIZE]{};
 
     ssize_t reader = ::read(fd, buff, BUFF_SIZE);
@@ -84,7 +84,6 @@ std::pair<char *, size_t> IOManager::allocateReader(const char *buff)
 std::pair<const char *, size_t> IOManager::split(const char *str)
 {
     const char *paddingStart = strstr(str, PADDING);
-    std::cout << str << '\n';
     if (paddingStart == nullptr)
         throw std::runtime_error("Padding not found");
 
