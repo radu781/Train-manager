@@ -89,13 +89,13 @@ std::string Command::execute()
 std::string Command::today()
 {
     if (command[1] == command[2])
-        return "";
-    
+        return "Please enter different start and destinations";
+
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
     std::string out;
     std::string brief;
     int counter = 0;
-    
+
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
@@ -104,17 +104,17 @@ std::string Command::today()
 
         for (const auto &element : trasa)
         {
-            if (element.attribute("DenStaOrigine").as_string() == command[1])
+            if (normalize(element.attribute("DenStaOrigine").as_string()) == normalize(command[1]))
                 start = element;
-            if (element.attribute("DenStaDestinatie").as_string() ==
-                    command[2] &&
+            if (normalize(element.attribute("DenStaDestinatie").as_string()) ==
+                    normalize(command[2]) &&
                 !start.empty())
                 end = element;
 
-            if (!start.empty())
+            if (!start.empty() && end.empty())
                 stations.push_back(element);
         }
-        if (!end.empty())
+        if (!end.empty() && !stations.empty())
         {
             char number[12]{};
             sprintf(number, "%d. ", ++counter);
@@ -215,6 +215,39 @@ void Command::getFile()
 
     LOG_DEBUG("Loaded xml");
     doc.load_file(localPath.c_str());
+}
+
+std::string Command::normalize(std::string str)
+{
+    static const std::unordered_map<const char *, char> dict = {
+        {"ă", 'a'},
+        {"â", 'a'},
+        {"â", 'a'},
+        {"î", 'i'},
+        {"ș", 's'},
+        {"ş", 's'},
+        {"ț", 't'},
+        {"ţ", 't'}};
+
+    std::istringstream in(str);
+    std::string token;
+    str.clear();
+    std::for_each(str.begin(), str.end(), [](char &c)
+                  { c = std::tolower(c); });
+    while (std::getline(in, token, ' '))
+        str += (char)std::toupper(token[0]) + token.substr(1);
+
+    for (const auto &[key, val] : dict)
+    {
+        size_t pos = str.find(key);
+        while (pos != std::string::npos)
+        {
+            str.replace(pos, 2, 1, val);
+            pos = str.find(key);
+        }
+    }
+
+    return str;
 }
 
 std::string Command::getTime(int seconds)

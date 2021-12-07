@@ -73,6 +73,14 @@ private:
     static void getFile();
 
     /**
+     * @brief Convert string with diacritics to an ascii friendly one and make
+     * the first character uppercase, leaving the other lowercase
+     * 
+     * \param str String to be converted
+     * \return Converted string
+     */
+    std::string normalize(std::string str);
+    /**
      * @brief Change the format of time from seconds to a more human readable
      * one
      *
