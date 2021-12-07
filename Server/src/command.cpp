@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <ctime>
+#include <cstring>
 #include <iostream>
 #include <filesystem>
 #include <mutex>
@@ -93,34 +94,55 @@ std::string Command::execute()
 
 std::string Command::today()
 {
-    getFile();
+    if (command[1] == command[2])
+        return "";
+    
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
     std::string out;
+    std::string brief;
+    int counter = 0;
+    
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
-        bool foundStart = false, foundDest = false;
         pugi::xml_node start, end;
-        std::string temp;
+        std::vector<pugi::xml_node> stations;
 
         for (const auto &element : trasa)
         {
             if (element.attribute("DenStaOrigine").as_string() == command[1])
                 start = element;
-            if (element.attribute("DenStaDestinatie").as_string() == command[2])
+            if (element.attribute("DenStaDestinatie").as_string() ==
+                    command[2] &&
+                !start.empty())
                 end = element;
+
+            if (!start.empty())
+                stations.push_back(element);
         }
-        if (!start.empty() && !end.empty())
-            out += start.attribute("DenStaOrigine").as_string() +
-                   std::string("(") +
-                   getTime(start.attribute("OraP").as_int()) +
-                   std::string(") to ") +
-                   end.attribute("DenStaDestinatie").as_string() +
-                   std::string("(") +
-                   getTime(end.attribute("OraS").as_int()) +
-                   ")\n";
+        if (!end.empty())
+        {
+            char number[12]{};
+            sprintf(number, "%d. ", ++counter);
+
+            brief += number + std::string("(") + getTime(start.attribute("OraP").as_int()) +
+                     " -> " + getTime(end.attribute("OraS").as_int()) + ") " +
+                     start.attribute("DenStaOrigine").as_string() + " -> " +
+                     end.attribute("DenStaDestinatie").as_string() + "\n";
+
+            strcat(number, "\n");
+            out += number;
+            for (const auto &station : stations)
+                out += std::string("(") + getTime(station.attribute("OraP").as_int()) +
+                       " -> " + getTime(station.attribute("OraS").as_int()) + ") " +
+                       station.attribute("DenStaOrigine").as_string() + " -> " +
+                       station.attribute("DenStaDestinatie").as_string() + "\n";
+            out += "\n";
+        }
     }
-    return out;
+    char buff[32];
+    sprintf(buff, "Found %d trains:\n", counter);
+    return buff + out + brief;
 }
 
     return "";
