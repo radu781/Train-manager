@@ -2,9 +2,10 @@
 #include <ctime>
 #include <sstream>
 #include <communication/command.hpp>
-#include <xml/pugixml.hpp>
 
 pugi::xml_document Command::doc{};
+std::unordered_set<std::string> Command::orase;
+std::vector<std::string> Command::oraseFull;
 
 Command::Command(const std::string &str)
 {
@@ -96,33 +97,42 @@ std::string Command::today()
     std::string brief;
     int counter = 0;
 
+    auto [start, dest] = split();
+    if (start == "" && dest == "")
+        return "Did not match any cities";
+
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
-        pugi::xml_node start, end;
+        pugi::xml_node startNode, endNode;
         std::vector<pugi::xml_node> stations;
 
+        // for each "Trasa" check if start and dest exist and occur in this order
         for (const auto &element : trasa)
         {
-            if (normalize(element.attribute("DenStaOrigine").as_string()) == normalize(command[1]))
-                start = element;
-            if (normalize(element.attribute("DenStaDestinatie").as_string()) ==
-                    normalize(command[2]) &&
-                !start.empty())
-                end = element;
+            if (normalize(element.attribute("DenStaOrigine").as_string())
+                    .find(normalize(start)) != -1)
+                startNode = element;
+            if (normalize(element.attribute("DenStaDestinatie").as_string())
+                        .find(normalize(dest)) != -1 &&
+                !startNode.empty())
+                endNode = element;
 
-            if (!start.empty() && end.empty())
+            if (!startNode.empty() && endNode.empty())
                 stations.push_back(element);
         }
-        if (!end.empty() && !stations.empty())
+
+        // If start and dest are found, recreate the path
+        // TODO: add indicator for current time
+        if (!endNode.empty() && !stations.empty())
         {
             char number[12]{};
             sprintf(number, "%d. ", ++counter);
 
-            brief += number + std::string("(") + getTime(start.attribute("OraP").as_int()) +
-                     " -> " + getTime(end.attribute("OraS").as_int()) + ") " +
-                     start.attribute("DenStaOrigine").as_string() + " -> " +
-                     end.attribute("DenStaDestinatie").as_string() + "\n";
+            brief += number + std::string("(") + getTime(startNode.attribute("OraP").as_int()) +
+                     " -> " + getTime(endNode.attribute("OraS").as_int()) + ") " +
+                     startNode.attribute("DenStaOrigine").as_string() + " -> " +
+                     endNode.attribute("DenStaDestinatie").as_string() + "\n";
 
             strcat(number, "\n");
             out += number;
@@ -134,11 +144,50 @@ std::string Command::today()
             out += "\n";
         }
     }
+
+    if (!counter)
+        return "Found no trains from " + start + " to " + dest;
+
     char buff[32];
-    sprintf(buff, "Found %d trains:\n", counter);
+    if (counter == 1)
+        sprintf(buff, "Found 1 train:\n");
+    else
+        sprintf(buff, "Found %d trains:\n", counter);
     return buff + out + brief;
 }
 
+bool Command::setContains(const std::string &str)
+{
+    for (const auto &ele : oraseFull)
+        if (ele.find(str) != -1)
+            return true;
+
+    return false;
+}
+
+std::pair<std::string, std::string> Command::split()
+{
+    for (int i = 1; i < command.size() - 1; i++)
+    {
+        std::string start = command[1], dest = command[i + 1];
+        for (int j = 2; j <= i; j++)
+            start += " " + command[j];
+        for (int j = i + 2; j < command.size(); j++)
+            dest += " " + command[j];
+
+        if (setContains(normalize(start)) && setContains(normalize(dest)))
+            return {start, dest};
+    }
+    return {};
+}
+
+std::string Command::arrivals()
+{
+    return "";
+}
+
+std::string Command::departures()
+{
     return "";
 }
 
@@ -150,7 +199,8 @@ std::string Command::help()
  hour, if delta is specified, it will get the departures in the upcoming delta\
  minutes)\n\
 \tarrivals [dest] [delta] (get the arrivals to [dest] in the upcoming hour, if\
- delta is specified, it will get the departures in the upcoming delta minutes)";
+ delta is specified, it will get the departures in the upcoming delta minutes)\n\
+ \t (quit close the connection)";
 }
 
 std::string Command::motd()
@@ -179,7 +229,7 @@ std::string Command::motd()
     case 6:
         strcpy(weekDay, "Saturday");
         break;
-    case 7:
+    case 0:
         strcpy(weekDay, "Sunday");
         break;
     default:
@@ -215,6 +265,21 @@ void Command::getFile()
 
     LOG_DEBUG("Loaded xml");
     doc.load_file(localPath.c_str());
+
+    auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
+
+    for (const auto &tren : trenuri)
+    {
+        auto trasa = tren.child("Trase").child("Trasa").children();
+        for (const auto &ele : trasa)
+        {
+            orase.insert(ele.attribute("DenStaOrigine").as_string());
+            orase.insert(ele.attribute("DenStaDestinatie").as_string());
+        }
+    }
+
+    for (const auto &ele : orase)
+        oraseFull.push_back(normalize(ele));
 }
 
 std::string Command::normalize(std::string str)
@@ -235,7 +300,7 @@ std::string Command::normalize(std::string str)
     std::for_each(str.begin(), str.end(), [](char &c)
                   { c = std::tolower(c); });
     while (std::getline(in, token, ' '))
-        str += (char)std::toupper(token[0]) + token.substr(1);
+        str += (char)std::toupper(token[0]) + token.substr(1) + " ";
 
     for (const auto &[key, val] : dict)
     {
