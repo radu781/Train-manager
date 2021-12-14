@@ -101,6 +101,14 @@ std::string Command::today()
     if (start == "" && dest == "")
         return "Did not match any cities";
 
+    time_t now = ::time(0);
+    tm *ltm = localtime(&now);
+    unsigned timeInSec = (ltm->tm_hour - 5) * 3600 + ltm->tm_min * 60 + ltm->tm_sec;
+
+    const char *OraS = "OraS", *OraP = "OraP";
+    const char *staOrig = "DenStaOrigine", *staDest= "DenStaDestinatie";
+
+    unsigned available = 0;
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
@@ -110,10 +118,10 @@ std::string Command::today()
         // for each "Trasa" check if start and dest exist and occur in this order
         for (const auto &element : trasa)
         {
-            if (normalize(element.attribute("DenStaOrigine").as_string())
+            if (normalize(element.attribute(staOrig).as_string())
                     .find(normalize(start)) != -1)
                 startNode = element;
-            if (normalize(element.attribute("DenStaDestinatie").as_string())
+            if (normalize(element.attribute(staDest).as_string())
                         .find(normalize(dest)) != -1 &&
                 !startNode.empty())
                 endNode = element;
@@ -122,28 +130,39 @@ std::string Command::today()
                 stations.push_back(element);
         }
 
+        const char *trainOk = "[o] ", *trainNOk = "[x] ";
         // If start and dest are found, recreate the path
-        // TODO: add indicator for current time
         if (!endNode.empty() && !stations.empty())
         {
             char number[12]{};
             sprintf(number, "%d. ", ++counter);
 
-            brief += number + std::string("(") + getTime(startNode.attribute("OraP").as_int()) +
-                     " -> " + getTime(endNode.attribute("OraS").as_int()) + ") " +
-                     startNode.attribute("DenStaOrigine").as_string() + " -> " +
-                     endNode.attribute("DenStaDestinatie").as_string() + "\n";
+            if (timeInSec < startNode.attribute(OraP).as_int())
+            {
+                available++;
+                brief += trainOk;
+            }
+            else
+                brief += trainNOk;
+            brief += number +
+                     std::string("(") +
+                     getTime(startNode.attribute(OraP).as_int()) +
+                     " -> " + getTime(endNode.attribute(OraS).as_int()) + ") " +
+                     startNode.attribute(staOrig).as_string() + " -> " +
+                     endNode.attribute(staDest).as_string() + "\n";
 
             strcat(number, "\n");
             out += number;
             for (const auto &station : stations)
-                out += std::string("(") + getTime(station.attribute("OraP").as_int()) +
-                       " -> " + getTime(station.attribute("OraS").as_int()) + ") " +
-                       station.attribute("DenStaOrigine").as_string() + " -> " +
-                       station.attribute("DenStaDestinatie").as_string() + "\n";
+                out += std::string("(") + getTime(station.attribute(OraP).as_int()) +
+                       " -> " + getTime(station.attribute(OraP).as_int()) + ") " +
+                       station.attribute(staOrig).as_string() + " -> " +
+                       station.attribute(staDest).as_string() + "\n";
             out += "\n";
         }
     }
+    if (!available)
+        brief += "No trains could be found at this time";
 
     if (!counter)
         return "Found no trains from " + start + " to " + dest;
@@ -153,7 +172,8 @@ std::string Command::today()
         sprintf(buff, "Found 1 train:\n");
     else
         sprintf(buff, "Found %d trains:\n", counter);
-    return buff + out + brief;
+    return std::string(buff) + "---Verbose result:---\n" + out +
+           "---Brief result:---\n" + brief;
 }
 
 bool Command::setContains(const std::string &str)
