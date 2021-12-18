@@ -1,7 +1,7 @@
 #include "pc.h"
 #include <ctime>
-#include <sstream>
 #include <communication/command.hpp>
+#include <utils/wordoperation.hpp>
 
 pugi::xml_document Command::doc{};
 std::unordered_set<std::string> Command::orase;
@@ -93,22 +93,15 @@ std::string Command::today()
         return "Please enter different start and destinations";
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
-    std::string out;
-    std::string brief;
-    int counter = 0;
 
     auto [start, dest] = split();
     if (start == "" && dest == "")
         return "Did not match any cities";
 
-    time_t now = ::time(0);
-    tm *ltm = localtime(&now);
-    unsigned timeInSec = (ltm->tm_hour - 5) * 3600 + ltm->tm_min * 60 + ltm->tm_sec;
+    std::string cleanStart = WordOperation::removeDiacritics(start);
+    std::string cleanDest = WordOperation::removeDiacritics(dest);
 
-    const char *OraS = "OraS", *OraP = "OraP";
-    const char *staOrig = "DenStaOrigine", *staDest= "DenStaDestinatie";
-
-    unsigned available = 0;
+    std::vector<std::vector<pugi::xml_node>> unsorted;
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
@@ -118,69 +111,37 @@ std::string Command::today()
         // for each "Trasa" check if start and dest exist and occur in this order
         for (const auto &element : trasa)
         {
-            if (normalize(element.attribute(staOrig).as_string())
-                    .find(normalize(start)) != -1)
+            if (WordOperation::removeDiacritics(element.attribute(staOrig).as_string())
+                    .find(cleanStart) != -1)
                 startNode = element;
-            if (normalize(element.attribute(staDest).as_string())
-                        .find(normalize(dest)) != -1 &&
+            if (WordOperation::removeDiacritics(element.attribute(staDest).as_string())
+                        .find(cleanDest) != -1 &&
                 !startNode.empty())
                 endNode = element;
 
-            if (!startNode.empty() && endNode.empty())
+            if (!startNode.empty())
                 stations.push_back(element);
+            if (!endNode.empty())
+                break;
         }
 
-        const char *trainOk = "[o] ", *trainNOk = "[x] ";
         // If start and dest are found, recreate the path
         if (!endNode.empty() && !stations.empty())
-        {
-            char number[12]{};
-            sprintf(number, "%d. ", ++counter);
-
-            if (timeInSec < startNode.attribute(OraP).as_int())
-            {
-                available++;
-                brief += trainOk;
-            }
-            else
-                brief += trainNOk;
-            brief += number +
-                     std::string("(") +
-                     getTime(startNode.attribute(OraP).as_int()) +
-                     " -> " + getTime(endNode.attribute(OraS).as_int()) + ") " +
-                     startNode.attribute(staOrig).as_string() + " -> " +
-                     endNode.attribute(staDest).as_string() + "\n";
-
-            strcat(number, "\n");
-            out += number;
-            for (const auto &station : stations)
-                out += std::string("(") + getTime(station.attribute(OraP).as_int()) +
-                       " -> " + getTime(station.attribute(OraP).as_int()) + ") " +
-                       station.attribute(staOrig).as_string() + " -> " +
-                       station.attribute(staDest).as_string() + "\n";
-            out += "\n";
-        }
+            unsorted.push_back(stations);
     }
-    if (!available)
-        brief += "No trains could be found at this time";
-
-    if (!counter)
-        return "Found no trains from " + start + " to " + dest;
-
-    char buff[32];
-    if (counter == 1)
-        sprintf(buff, "Found 1 train:\n");
-    else
-        sprintf(buff, "Found %d trains:\n", counter);
-    return std::string(buff) + "---Verbose result:---\n" + out +
-           "---Brief result:---\n" + brief;
+    return getVerbose(unsorted) + "\n" + getBrief(unsorted);
 }
 
-bool Command::setContains(const std::string &str)
+bool Command::setContains(std::string &str)
 {
+    const unsigned threshold = str.size() / 4 + 1;
+
     for (const auto &ele : oraseFull)
-        if (ele.find(str) != -1)
+        if (WordOperation::distance(ele, str) < threshold || ele.find(str) != -1)
+        {
+            str = ele;
             return true;
+        }
 
     return false;
 }
@@ -195,8 +156,10 @@ std::pair<std::string, std::string> Command::split()
         for (int j = i + 2; j < command.size(); j++)
             dest += " " + command[j];
 
-        if (setContains(normalize(start)) && setContains(normalize(dest)))
-            return {start, dest};
+        std::string cleanStart = WordOperation::removeDiacritics(start);
+        std::string cleanDest = WordOperation::removeDiacritics(dest);
+        if (setContains(cleanStart) && setContains(cleanDest))
+            return {cleanStart, cleanDest};
     }
     return {};
 }
@@ -299,40 +262,65 @@ void Command::getFile()
     }
 
     for (const auto &ele : orase)
-        oraseFull.push_back(normalize(ele));
+        oraseFull.push_back(WordOperation::removeDiacritics(ele));
 }
 
-std::string Command::normalize(std::string str)
+std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj)
 {
-    static const std::unordered_map<const char *, char> dict = {
-        {"ă", 'a'},
-        {"â", 'a'},
-        {"â", 'a'},
-        {"î", 'i'},
-        {"ș", 's'},
-        {"ş", 's'},
-        {"ț", 't'},
-        {"ţ", 't'}};
+    std::string out;
+    char number[12]{};
+    unsigned index = 0;
 
-    std::istringstream in(str);
-    std::string token;
-    str.clear();
-    std::for_each(str.begin(), str.end(), [](char &c)
-                  { c = std::tolower(c); });
-    while (std::getline(in, token, ' '))
-        str += (char)std::toupper(token[0]) + token.substr(1) + " ";
-
-    for (const auto &[key, val] : dict)
+    for (const auto &vec : obj)
     {
-        size_t pos = str.find(key);
-        while (pos != std::string::npos)
-        {
-            str.replace(pos, 2, 1, val);
-            pos = str.find(key);
-        }
+        sprintf(number, "%u.\n", ++index);
+        out += number;
+        for (const auto &node : vec)
+            out += "(" + getTime(node.attribute(OraP).as_int()) +
+                   " -> " + getTime(node.attribute(OraS).as_int()) + ") " +
+                   node.attribute(staOrig).as_string() + " -> " +
+                   node.attribute(staDest).as_string() + "\n";
     }
 
-    return str;
+    if (!index)
+        return "Found no trains";
+
+    char countStr[32]{};
+    sprintf(countStr, "Found %u trains:\n", index);
+    return countStr + out;
+}
+
+std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &obj)
+{
+    std::string out;
+    char number[12]{};
+    unsigned index = 0;
+
+    for (const auto &vec : obj)
+    {
+        sprintf(number, "%u. ", ++index);
+        out += std::string(isBefore(vec.front().attribute(OraP).as_int()) ? trainOk : trainNOk) + number;
+        out += "(" + getTime(vec.front().attribute(OraP).as_int()) + " -> " +
+               getTime(vec.back().attribute(OraS).as_int()) + ") " +
+               vec.front().attribute(staOrig).as_string() + " -> " +
+               vec.back().attribute(staDest).as_string() + "\n";
+    }
+
+    if (!index)
+        return "";
+
+    char briefDesc[32]{};
+    sprintf(briefDesc, "At a glance (%u trains):\n", index);
+    return briefDesc + out;
+}
+
+bool Command::isBefore(unsigned time)
+{
+    time_t now = ::time(0);
+    tm *ltm = localtime(&now);
+    unsigned timeInSec = (ltm->tm_hour - 5) * 3600 + ltm->tm_min * 60 + ltm->tm_sec;
+
+    return timeInSec < time;
 }
 
 std::string Command::getTime(int seconds)

@@ -26,12 +26,30 @@ public:
 
     /**
      * @brief Get a message that is only sent to clients when they connect to
-     * the server
+     * the server, must be static to be used by client thread
      *
      * \return Message of the day
      */
     static std::string motd();
     friend class Connection;
+    /**
+     * @brief Get all trains from [start] to [destination], where
+     * start == command[1] and end == command[2] after being parsed by
+     * execute()
+     *
+     * \return String containing the start and destination times of the trains
+     */
+    std::string today();
+
+    /**
+     * @brief Command used to print information about all available commands
+     *
+     * \return All available commands including fixed and optional arguments
+     * and their description
+     */
+    std::string help();
+    std::string arrivals();
+    std::string departures();
 
 private:
     /**
@@ -51,24 +69,8 @@ private:
     std::pair<size_t, uint8_t> validate();
 
     /**
-     * @brief Get all trains from [start] to [destination], where
-     * start == command[1] and end == command[2] after being parsed by
-     * execute()
-     *
-     * \return String containing the start and destination times of the trains
-     */
-    std::string today();
-
-    /**
-     * @brief Command used to print information about all available commands
-     *
-     * \return All available commands including fixed and optional arguments
-     * and their description
-     */
-    std::string help();
-
-    /**
-     * @brief Load the local .xml file or download it if not found locally
+     * @brief Load the local .xml file or download it if not found locally, must
+     * be static to be called by the Connection (singleton) constructor
      */
     static void getFile();
 
@@ -79,7 +81,13 @@ private:
      * \param str String to be converted
      * \return Converted string
      */
-    static std::string normalize(std::string str);
+    // static std::string normalize(std::string str);
+
+    std::string
+    getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj);
+    std::string
+    getBrief(const std::vector<std::vector<pugi::xml_node>> &obj);
+    static bool isBefore(unsigned time);
 
     /**
      * @brief Change the format of time from seconds to a more human readable
@@ -101,24 +109,22 @@ private:
     static std::vector<std::string> oraseFull;
 
     /**
-     * @brief Check if the unordered_set contains the string
-     * 
+     * @brief Check if the unordered_set contains the string, also modify the
+     * string if a close match was found
+     *
      * \param str String to be searched for in the string. Substrings are
      * considered valid too
      * \return True if the string could be found
      */
-    static bool setContains(const std::string& str);
+    static bool setContains(std::string &str);
 
     /**
      * @brief Split the command member into two strings by following the rule:
      * [begin, i], (i, end], where 0 < i < command.size()
-     * 
+     *
      * \return 2 valid city names if found, empty strings otherwise
      */
     std::pair<std::string, std::string> split();
-
-    std::string arrivals();
-    std::string departures();
 
     enum class CommandTypes
     {
@@ -143,4 +149,8 @@ private:
                                                         {"departures", 1},
                                                         {"arrivals", 1},
                                                         {"help", OPTIONAL_OFFSET + 1}};
+
+    static constexpr const char *OraS = "OraS", *OraP = "OraP";
+    static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
+    static constexpr const char *trainOk = "[o] ", *trainNOk = "[x] ";
 };
