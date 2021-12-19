@@ -1,8 +1,8 @@
 #include "pc.h"
 #include <netinet/in.h>
-#include <communication/command.hpp>
-#include <communication/connection.hpp>
-#include <communication/iomanager.hpp>
+#include "communication/command.hpp"
+#include "communication/connection.hpp"
+#include "communication/iomanager.hpp"
 
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;

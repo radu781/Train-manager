@@ -1,9 +1,7 @@
 #pragma once
 
+#include "pc.h"
 #include <netinet/in.h>
-#include <string>
-#include <thread>
-#include <unordered_map>
 #include "client.hpp"
 
 /**

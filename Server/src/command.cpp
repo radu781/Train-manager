@@ -1,7 +1,7 @@
 #include "pc.h"
 #include <ctime>
-#include <communication/command.hpp>
-#include <utils/wordoperation.hpp>
+#include "communication/command.hpp"
+#include "utils/wordoperation.hpp"
 
 pugi::xml_document Command::doc{};
 std::unordered_set<std::string> Command::orase;

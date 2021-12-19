@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string>
-#include <thread>
+#include "pc.h"
 
 /**
  * @brief Stores information regarding a single client, so far only a socket

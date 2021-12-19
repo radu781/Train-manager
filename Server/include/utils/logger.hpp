@@ -6,9 +6,8 @@
 
 #pragma once
 
+#include "pc.h"
 #include <fstream>
-#include <mutex>
-#include <string>
 
 #define LOG_COMMUNICATION(str, bool, int) Log::getInstance()->communication( \
     str, bool, int)

@@ -6,9 +6,9 @@ FLAGS = -c -Wall -O0 -g --std=c++2a -fdiagnostics-color=always $(DEFINES) $(INCL
 DEFINES = -D ENABLE_COMM_LOGGING -D ENABLE_DEBG_LOGGING
 INCLUDES = -I include
 
-all:
+all: pch
 	$(MAKE) -C src
 pch: 
-	g++ $(FLAGS) -x c++-header include/pc.h
+	test -f include/pc.h.gch || g++ $(FLAGS) -x c++-header include/pc.h
 clean:
 	-rm -r $(BUILD_DIR) $(BIN_DIR)
