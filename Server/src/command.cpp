@@ -98,9 +98,6 @@ std::string Command::today()
     if (start == "" && dest == "")
         return "Did not match any cities";
 
-    std::string cleanStart = WordOperation::removeDiacritics(start);
-    std::string cleanDest = WordOperation::removeDiacritics(dest);
-
     std::vector<std::vector<pugi::xml_node>> unsorted;
     for (const auto &tren : trenuri)
     {
@@ -112,10 +109,10 @@ std::string Command::today()
         for (const auto &element : trasa)
         {
             if (WordOperation::removeDiacritics(element.attribute(staOrig).as_string())
-                    .find(cleanStart) != -1)
+                    .find(start) != -1)
                 startNode = element;
             if (WordOperation::removeDiacritics(element.attribute(staDest).as_string())
-                        .find(cleanDest) != -1 &&
+                        .find(dest) != -1 &&
                 !startNode.empty())
                 endNode = element;
 
@@ -137,11 +134,15 @@ bool Command::setContains(std::string &str)
     const unsigned threshold = str.size() / 4 + 1;
 
     for (const auto &ele : oraseFull)
-        if (WordOperation::distance(ele, str) < threshold || ele.find(str) != -1)
+        if (WordOperation::distance(ele, str) < threshold)
         {
             str = ele;
             return true;
         }
+
+    for (const auto &ele : oraseFull)
+        if (ele.find(str) != -1)
+            return true;
 
     return false;
 }
@@ -271,15 +272,28 @@ std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &
     char number[12]{};
     unsigned index = 0;
 
+    const unsigned MIN_OFFSET = 3;
+
     for (const auto &vec : obj)
     {
         sprintf(number, "%u.\n", ++index);
         out += number;
         for (const auto &node : vec)
-            out += "(" + getTime(node.attribute(OraP).as_int()) +
-                   " -> " + getTime(node.attribute(OraS).as_int()) + ") " +
-                   node.attribute(staOrig).as_string() + " -> " +
-                   node.attribute(staDest).as_string() + "\n";
+        {
+            unsigned start = node.attribute(OraP).as_int();
+            unsigned end = node.attribute(OraS).as_int();
+
+            std::string orig = node.attribute(staOrig).as_string();
+            std::string dest = node.attribute(staDest).as_string();
+
+            std::string delta =
+                end - start < 3600
+                    ? getTime(end - start).substr(MIN_OFFSET) + " min"
+                    : getTime(end - start);
+
+            out += "(" + getTime(start) + " -> " + getTime(end) + ", " + delta +
+                   ") " + orig + " -> " + dest + "\n";
+        }
     }
 
     if (!index)
@@ -296,14 +310,27 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
     char number[12]{};
     unsigned index = 0;
 
+    const unsigned MIN_OFFSET = 3;
+
     for (const auto &vec : obj)
     {
         sprintf(number, "%u. ", ++index);
-        out += std::string(isBefore(vec.front().attribute(OraP).as_int()) ? trainOk : trainNOk) + number;
-        out += "(" + getTime(vec.front().attribute(OraP).as_int()) + " -> " +
-               getTime(vec.back().attribute(OraS).as_int()) + ") " +
-               vec.front().attribute(staOrig).as_string() + " -> " +
-               vec.back().attribute(staDest).as_string() + "\n";
+        std::string available = (isBefore(vec.front().attribute(OraP).as_int()) ? trainOk : trainNOk);
+
+        unsigned start = vec.front().attribute(OraP).as_int();
+        unsigned end = vec.back().attribute(OraS).as_int();
+
+        std::string orig = vec.front().attribute(staOrig).as_string();
+        std::string dest = vec.back().attribute(staDest).as_string();
+
+        std::string delta =
+            end - start < 3600
+                ? getTime(end - start).substr(MIN_OFFSET) + " min"
+                : getTime(end - start).substr(0, MIN_OFFSET) + "h, " +
+                      getTime(end - start).substr(MIN_OFFSET - 1) + "min";
+
+        out += available + number + "(" + getTime(start) + " -> " + getTime(end) + ", " +
+               delta + ") " + orig + " -> " + dest + "\n";
     }
 
     if (!index)

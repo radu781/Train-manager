@@ -1,6 +1,6 @@
 #include "pc.h"
 #include <sstream>
-#include <utils/wordoperation.hpp>
+#include "utils/wordoperation.hpp"
 
 std::string WordOperation::removeDiacritics(std::string str)
 {
@@ -37,32 +37,27 @@ std::string WordOperation::removeDiacritics(std::string str)
 
 unsigned WordOperation::distance(const std::string &src, const std::string &dest)
 {
-    int len1 = src.size();
-    int len2 = dest.size();
+    std::vector<std::vector<int>> mat;
+    mat.resize(2);
+    mat[0].resize(src.size() + 1);
+    mat[1].resize(src.size() + 1);
 
-    int DP[2][len1 + 1];
+    for (int i = 0; i <= src.size(); i++)
+        mat[0][i] = i;
 
-    memset(DP, 0, sizeof DP);
-
-    for (int i = 0; i <= len1; i++)
-        DP[0][i] = i;
-
-    for (int i = 1; i <= len2; i++)
-    {
-        for (int j = 0; j <= len1; j++)
+    for (int i = 1; i <= dest.size(); i++)
+        for (int j = 0; j <= src.size(); j++)
         {
             if (j == 0)
-                DP[i % 2][j] = i;
+                mat[i % 2][j] = i;
 
             else if (src[j - 1] == dest[i - 1])
-                DP[i % 2][j] = DP[(i - 1) % 2][j - 1];
+                mat[i % 2][j] = mat[(i - 1) % 2][j - 1];
 
             else
-                DP[i % 2][j] = 1 + std::min(DP[(i - 1) % 2][j],
-                                            std::min(DP[i % 2][j - 1],
-                                                     DP[(i - 1) % 2][j - 1]));
+                mat[i % 2][j] = 1 + std::min(mat[(i - 1) % 2][j], std::min(mat[i % 2][j - 1],
+                                                                         mat[(i - 1) % 2][j - 1]));
         }
-    }
 
-    return DP[len2 % 2][len1];
+    return mat[dest.size() % 2][src.size()];
 }
