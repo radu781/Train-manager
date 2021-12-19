@@ -135,17 +135,17 @@ private:
     struct Args
     {
         std::string command;
-        uint8_t argCount;
+        unsigned argCount;
     };
     enum class Errors
     {
         WRONG_ARG_COUNT = -2,
         TOO_MANY_ARGS
     };
-    const uint8_t OPTIONAL_OFFSET = 100;
+    const unsigned OPTIONAL_OFFSET = 100;
     const Args commands[(size_t)CommandTypes::COUNT] = {{"today", OPTIONAL_OFFSET + 5},
-                                                        {"departures", 1},
-                                                        {"arrivals", 1},
+                                                        {"departures", OPTIONAL_OFFSET + 5},
+                                                        {"arrivals", OPTIONAL_OFFSET + 5},
                                                         {"help", OPTIONAL_OFFSET + 1}};
 
     static constexpr const char *OraS = "OraS", *OraP = "OraP";

@@ -34,7 +34,7 @@ std::pair<size_t, uint8_t> Command::validate()
             // if command with optional values
             if (commands[i].argCount > OPTIONAL_OFFSET)
             {
-                if (command.size() - 1 <= commands[i].argCount - OPTIONAL_OFFSET)
+                if (unsigned(command.size() - 1) <= commands[i].argCount - OPTIONAL_OFFSET)
                     return {i, command.size() - 1};
                 else
                     // too many args
@@ -109,10 +109,10 @@ std::string Command::today()
         for (const auto &element : trasa)
         {
             if (WordOperation::removeDiacritics(element.attribute(staOrig).as_string())
-                    .find(start) != -1)
+                    .find(start) != -1lu)
                 startNode = element;
             if (WordOperation::removeDiacritics(element.attribute(staDest).as_string())
-                        .find(dest) != -1 &&
+                        .find(dest) != -1lu &&
                 !startNode.empty())
                 endNode = element;
 
@@ -141,7 +141,7 @@ bool Command::setContains(std::string &str)
         }
 
     for (const auto &ele : oraseFull)
-        if (ele.find(str) != -1)
+        if (ele.find(str) != -1lu)
             return true;
 
     return false;
@@ -149,12 +149,12 @@ bool Command::setContains(std::string &str)
 
 std::pair<std::string, std::string> Command::split()
 {
-    for (int i = 1; i < command.size() - 1; i++)
+    for (size_t i = 1; i < command.size() - 1; i++)
     {
         std::string start = command[1], dest = command[i + 1];
-        for (int j = 2; j <= i; j++)
+        for (size_t j = 2; j <= i; j++)
             start += " " + command[j];
-        for (int j = i + 2; j < command.size(); j++)
+        for (size_t j = i + 2; j < command.size(); j++)
             dest += " " + command[j];
 
         std::string cleanStart = WordOperation::removeDiacritics(start);
@@ -257,8 +257,8 @@ void Command::getFile()
         auto trasa = tren.child("Trase").child("Trasa").children();
         for (const auto &ele : trasa)
         {
-            orase.insert(ele.attribute("DenStaOrigine").as_string());
-            orase.insert(ele.attribute("DenStaDestinatie").as_string());
+            orase.insert(ele.attribute(staOrig).as_string());
+            orase.insert(ele.attribute(staDest).as_string());
         }
     }
 
@@ -345,7 +345,7 @@ bool Command::isBefore(unsigned time)
 {
     time_t now = ::time(0);
     tm *ltm = localtime(&now);
-    unsigned timeInSec = (ltm->tm_hour - 5) * 3600 + ltm->tm_min * 60 + ltm->tm_sec;
+    unsigned timeInSec = ltm->tm_hour * 3600 + ltm->tm_min * 60 + ltm->tm_sec;
 
     return timeInSec < time;
 }

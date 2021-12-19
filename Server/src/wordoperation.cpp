@@ -42,11 +42,11 @@ unsigned WordOperation::distance(const std::string &src, const std::string &dest
     mat[0].resize(src.size() + 1);
     mat[1].resize(src.size() + 1);
 
-    for (int i = 0; i <= src.size(); i++)
+    for (size_t i = 0; i <= src.size(); i++)
         mat[0][i] = i;
 
-    for (int i = 1; i <= dest.size(); i++)
-        for (int j = 0; j <= src.size(); j++)
+    for (size_t i = 1; i <= dest.size(); i++)
+        for (size_t j = 0; j <= src.size(); j++)
         {
             if (j == 0)
                 mat[i % 2][j] = i;
