@@ -124,6 +124,8 @@ private:
      */
     std::pair<std::string, std::string> split();
 
+    std::string findByCity(const std::string& how);
+
     enum class CommandTypes
     {
         TODAY,

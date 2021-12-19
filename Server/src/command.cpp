@@ -165,14 +165,51 @@ std::pair<std::string, std::string> Command::split()
     return {};
 }
 
+std::string Command::findByCity(const std::string &timeType)
+{
+    assert(timeType == OraS || timeType == OraP);
+    std::string wholeCity;
+    for (size_t i = 1; i < command.size() - 1; i++)
+        wholeCity += command[i];
+    wholeCity = WordOperation::removeDiacritics(wholeCity);
+    if (!setContains(wholeCity))
+        return "Please enter a valid city";
+
+    auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
+
+    unsigned delta = atoi(command.back().c_str());
+    std::vector<std::vector<pugi::xml_node>> stations(1);
+
+    for (const auto &tren : trenuri)
+    {
+        auto trasa = tren.child("Trase").child("Trasa").children();
+
+        for (const auto &element : trasa)
+        {
+            unsigned end = element.attribute(timeType.c_str()).as_int();
+            std::string dest = element.attribute(staDest).as_string();
+
+            if (WordOperation::removeDiacritics(dest).find(wholeCity) != -1lu)
+            {
+                if (timeType == OraS && !isBefore(end - 60 * delta))
+                    stations.front().push_back(element);
+                else if (isBefore(end - 60 * delta))
+                    stations.front().push_back(element);
+            }
+        }
+    }
+
+    return getVerbose(stations);
+}
+
 std::string Command::arrivals()
 {
-    return "";
+    return findByCity(OraS);
 }
 
 std::string Command::departures()
 {
-    return "";
+    return findByCity(OraP);
 }
 
 std::string Command::help()
