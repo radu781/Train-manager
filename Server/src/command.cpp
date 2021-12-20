@@ -20,38 +20,27 @@ Command::Command(const std::string &str)
         command.push_back(token);
 }
 
-std::pair<size_t, uint8_t> Command::validate()
+Command::CommandTypes Command::validate()
 {
     std::transform(command[0].begin(), command[0].end(), command[0].begin(),
                    tolower);
 
-    if (command.size() >= (uint8_t)-1)
-        return {-1, 0};
+    if (commands.contains(command[0]))
+    {
+        auto pos = commands.at(command[0]);
 
-    for (size_t i = 0; i < (size_t)CommandTypes::COUNT; i++)
-        if (command[0] == commands[i].command)
-        {
-            // if command with optional values
-            if (commands[i].argCount > OPTIONAL_OFFSET)
-            {
-                if (unsigned(command.size() - 1) <= commands[i].argCount - OPTIONAL_OFFSET)
-                    return {i, command.size() - 1};
-                else
-                    // too many args
-                    return {i, (uint8_t)Errors::TOO_MANY_ARGS};
-            }
-            // if command with fixed number of values
-            else if (commands[i].argCount < OPTIONAL_OFFSET)
-            {
-                if (command.size() - 1 == commands[i].argCount)
-                    return {i, command.size() - 1};
-                else
-                    // wrong arg count
-                    return {i, (uint8_t)Errors::WRONG_ARG_COUNT};
-            }
-        }
+        if (command.size() - 1 < pos.mandatory)
+            return CommandTypes::NOT_ENOUGH_ARGS;
+        if (pos.optional != -1u &&
+            command.size() - 1 > pos.mandatory + pos.optional)
+            return CommandTypes::TOO_MANY_ARGS;
 
-    return {-1, 0};
+        if (command.size() - 1 >= pos.mandatory &&
+            (pos.optional == -1u || command.size() - 1 <= pos.mandatory + pos.optional))
+            return pos.type;
+    }
+
+    return CommandTypes::NOT_FOUND;
 }
 
 std::string Command::execute()
@@ -59,28 +48,31 @@ std::string Command::execute()
     if (command.size() == 0)
         return "";
 
-    auto [cmd, argc] = validate();
-    if (cmd == (size_t)-1)
-        return "Command " + command[0] + " is (currently) not supported";
-    if (argc == (uint8_t)Errors::TOO_MANY_ARGS)
-        return "Command " + command[0] + " has " +
-               (char)(commands[cmd].argCount + '0' - OPTIONAL_OFFSET) +
-               " optional arguments, " + (char)(command.size() - 1 + '0') + " provided";
-    if (argc == (uint8_t)Errors::WRONG_ARG_COUNT)
-        return "Command " + command[0] + " has " +
-               (char)(commands[cmd].argCount + '0') + " arguments, " +
-               (char)(command.size() - 1 + '0') + " provided";
-
-    switch (cmd)
+    auto cmd = commands.at(command[0]);
+    switch (validate())
     {
-    case (size_t)CommandTypes::TODAY:
-        return Command::today();
-    case (size_t)CommandTypes::DEPARTURES:
-        return Command::departures();
-    case (size_t)CommandTypes::ARRIVALS:
-        return Command::arrivals();
-    case (size_t)CommandTypes::HELP:
-        return Command::help();
+    case CommandTypes::NOT_ENOUGH_ARGS:
+        return "Command " + command[0] + " has " +
+               Types::toString(cmd.mandatory) + " mandatory arguments, " +
+               Types::toString(command.size() - 1u) + " provided";
+    case CommandTypes::TOO_MANY_ARGS:
+        return "Command " + command[0] + " has up to " +
+               Types::toString(cmd.mandatory + cmd.optional) + " arguments, " +
+               Types::toString(command.size() - 1u) + "provided";
+    case CommandTypes::NOT_FOUND:
+        return "Command " + command[0] + " not found";
+
+    case CommandTypes::TODAY:
+        return today();
+    case CommandTypes::DEPARTURES:
+        return departures();
+    case CommandTypes::ARRIVALS:
+        return arrivals();
+    case CommandTypes::LATE:
+        return late();
+    case CommandTypes::HELP:
+        return help();
+
     default:
         LOG_DEBUG("Unexpected command " + command[0]);
         return "Try again";

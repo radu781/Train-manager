@@ -58,13 +58,16 @@ private:
      */
     std::string trim(std::string str);
 
+private:
+    enum class CommandTypes;
+
+public:
     /**
      * @brief Check if the command and arguments inputted by the client are valid
      *
-     * \return Pair of <command index (if found, otherwise -1), bool (true if
-     * the argument count matches that of the command, false otherwise>
+     * \return Command type to be interpreted by execute()
      */
-    std::pair<size_t, uint8_t> validate();
+    CommandTypes validate();
 
     /**
      * @brief Load the local .xml file or download it if not found locally, must
@@ -106,6 +109,7 @@ private:
     static std::unordered_set<std::string> orase;
     static std::vector<std::string> oraseFull;
 
+private:
     /**
      * @brief Check if the unordered_set contains the string, also modify the
      * string if a close match was found
@@ -131,24 +135,28 @@ private:
         TODAY,
         DEPARTURES,
         ARRIVALS,
+        LATE,
         HELP,
-        COUNT
+        COUNT,
+
+        NOT_ENOUGH_ARGS,
+        TOO_MANY_ARGS,
+        NOT_FOUND
     };
     struct Args
     {
-        std::string command;
-        unsigned argCount;
+        unsigned mandatory;
+        unsigned optional;
+        CommandTypes type;
     };
-    enum class Errors
-    {
-        WRONG_ARG_COUNT = -2,
-        TOO_MANY_ARGS
+
+    const std::unordered_map<std::string, Args> commands = {
+        {"today", {2, -1u, CommandTypes::TODAY}},
+        {"departures", {2, -1u, CommandTypes::DEPARTURES}},
+        {"arrivals", {2, -1u, CommandTypes::ARRIVALS}},
+        {"late", {1, -1u, CommandTypes::LATE}},
+        {"help", {0, 1u, CommandTypes::HELP}},
     };
-    const unsigned OPTIONAL_OFFSET = 100;
-    const Args commands[(size_t)CommandTypes::COUNT] = {{"today", OPTIONAL_OFFSET + 5},
-                                                        {"departures", OPTIONAL_OFFSET + 5},
-                                                        {"arrivals", OPTIONAL_OFFSET + 5},
-                                                        {"help", OPTIONAL_OFFSET + 1}};
 
     static constexpr const char *OraS = "OraS", *OraP = "OraP";
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
