@@ -8,7 +8,16 @@ LIBS = -lpthread
 BUILD_DIR = ../build
 BIN_DIR = ../bin
 
-objects = connection.o exceptions.o client.o iomanager.o logger.o command.o pugixml.o wordoperation.o main.o
+objects = connection.o \
+		exceptions.o \
+		client.o \
+		iomanager.o \
+		logger.o \
+		command.o \
+		pugixml.o \
+		wordoperation.o \
+		types.o \
+		main.o
 
 all: dir $(objects)
 	g++ -g $(BUILD_DIR)/*.o -o $(BIN_DIR)/main $(LIBS)

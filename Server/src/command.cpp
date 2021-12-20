@@ -306,15 +306,13 @@ void Command::getFile()
 std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj)
 {
     std::string out;
-    char number[12]{};
     unsigned index = 0;
 
     const unsigned MIN_OFFSET = 3;
 
     for (const auto &vec : obj)
     {
-        sprintf(number, "%u.\n", ++index);
-        out += number;
+        out += Types::toString(++index);
         for (const auto &node : vec)
         {
             unsigned start = node.attribute(OraP).as_int();
@@ -336,22 +334,18 @@ std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &
     if (!index)
         return "Found no trains";
 
-    char countStr[32]{};
-    sprintf(countStr, "Found %u trains:\n", index);
-    return countStr + out;
+    return "Found " + Types::toString(index) + " trains" + out;
 }
 
 std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &obj)
 {
     std::string out;
-    char number[12]{};
     unsigned index = 0;
 
     const unsigned MIN_OFFSET = 3;
 
     for (const auto &vec : obj)
     {
-        sprintf(number, "%u. ", ++index);
         std::string available = (isBefore(vec.front().attribute(OraP).as_int()) ? trainOk : trainNOk);
 
         unsigned start = vec.front().attribute(OraP).as_int();
@@ -366,16 +360,14 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
                 : getTime(end - start).substr(0, MIN_OFFSET) + "h, " +
                       getTime(end - start).substr(MIN_OFFSET - 1) + "min";
 
-        out += available + number + "(" + getTime(start) + " -> " + getTime(end) + ", " +
+        out += available + Types::toString(++index) + ". (" + getTime(start) + " -> " + getTime(end) + ", " +
                delta + ") " + orig + " -> " + dest + "\n";
     }
 
     if (!index)
         return "";
 
-    char briefDesc[32]{};
-    sprintf(briefDesc, "At a glance (%u trains):\n", index);
-    return briefDesc + out;
+    return "At a glance (" + Types::toString(index) + " trains)\n" + out;
 }
 
 bool Command::isBefore(unsigned time)
