@@ -48,34 +48,42 @@ std::string Command::execute()
     if (command.size() == 0)
         return "";
 
-    auto cmd = commands.at(command[0]);
-    switch (validate())
+    try
     {
-    case CommandTypes::NOT_ENOUGH_ARGS:
-        return "Command " + command[0] + " has " +
-               Types::toString(cmd.mandatory) + " mandatory arguments, " +
-               Types::toString(command.size() - 1u) + " provided";
-    case CommandTypes::TOO_MANY_ARGS:
-        return "Command " + command[0] + " has up to " +
-               Types::toString(cmd.mandatory + cmd.optional) + " arguments, " +
-               Types::toString(command.size() - 1u) + "provided";
-    case CommandTypes::NOT_FOUND:
+        auto cmd = commands.at(command[0]);
+
+        switch (validate())
+        {
+        case CommandTypes::NOT_ENOUGH_ARGS:
+            return "Command " + command[0] + " has " +
+                   Types::toString(cmd.mandatory) + " mandatory arguments, " +
+                   Types::toString(command.size() - 1u) + " provided";
+        case CommandTypes::TOO_MANY_ARGS:
+            return "Command " + command[0] + " has up to " +
+                   Types::toString(cmd.mandatory + cmd.optional) + " arguments, " +
+                   Types::toString(command.size() - 1u) + "provided";
+        case CommandTypes::NOT_FOUND:
+            return "Command " + command[0] + " not found";
+
+        case CommandTypes::TODAY:
+            return today();
+        case CommandTypes::DEPARTURES:
+            return departures();
+        case CommandTypes::ARRIVALS:
+            return arrivals();
+        case CommandTypes::LATE:
+            return late();
+        case CommandTypes::HELP:
+            return help();
+
+        default:
+            LOG_DEBUG("Unexpected command " + command[0]);
+            return "Try again";
+        }
+    }
+    catch (const std::out_of_range &e) // caused by the commands.at()
+    {
         return "Command " + command[0] + " not found";
-
-    case CommandTypes::TODAY:
-        return today();
-    case CommandTypes::DEPARTURES:
-        return departures();
-    case CommandTypes::ARRIVALS:
-        return arrivals();
-    case CommandTypes::LATE:
-        return late();
-    case CommandTypes::HELP:
-        return help();
-
-    default:
-        LOG_DEBUG("Unexpected command " + command[0]);
-        return "Try again";
     }
 }
 
@@ -170,7 +178,7 @@ std::string Command::findByCity(const std::string &timeType)
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
     unsigned delta = atoi(command.back().c_str());
-    std::vector<std::vector<pugi::xml_node>> stations(1);
+    std::vector<std::vector<pugi::xml_node>> stations;
 
     for (const auto &tren : trenuri)
     {
@@ -178,20 +186,22 @@ std::string Command::findByCity(const std::string &timeType)
 
         for (const auto &element : trasa)
         {
-            unsigned end = element.attribute(timeType.c_str()).as_int();
-            std::string dest = element.attribute(staDest).as_string();
+            unsigned timeStamp = element.attribute(timeType.c_str()).as_int();
+            std::string cityStamp = element.attribute(staOrig).as_string();
 
-            if (WordOperation::removeDiacritics(dest).find(wholeCity) != -1lu)
+            if (WordOperation::removeDiacritics(cityStamp).find(wholeCity) != -1lu)
             {
-                if (timeType == OraS && !isBefore(end - 60 * delta))
-                    stations.front().push_back(element);
-                else if (isBefore(end - 60 * delta))
-                    stations.front().push_back(element);
+                if (timeType == OraS && currentTime() + 60 * delta > timeStamp &&
+                    currentTime() < timeStamp)
+                    stations.push_back(std::vector<pugi::xml_node>{element});
+                else if (timeType == OraP && currentTime() + 60 * delta > timeStamp &&
+                         currentTime() < timeStamp)
+                    stations.push_back(std::vector<pugi::xml_node>{element});
             }
         }
     }
-
-    return getVerbose(stations);
+    sort(stations);
+    return getBrief(stations);
 }
 
 std::string Command::arrivals()
@@ -304,7 +314,7 @@ std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &
 
     for (const auto &vec : obj)
     {
-        out += Types::toString(++index);
+        out += Types::toString(++index) + ".\n";
         for (const auto &node : vec)
         {
             unsigned start = node.attribute(OraP).as_int();
@@ -321,24 +331,27 @@ std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &
             out += "(" + getTime(start) + " -> " + getTime(end) + ", " + delta +
                    ") " + orig + " -> " + dest + "\n";
         }
+        out += "\n";
     }
 
+    out = out.substr(0, out.size() - 1); // overhead but looks better
     if (!index)
         return "Found no trains";
 
-    return "Found " + Types::toString(index) + " trains" + out;
+    return "Found " + Types::toString(index) + " trains:\n" + out;
 }
 
 std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &obj)
 {
     std::string out;
     unsigned index = 0;
-
     const unsigned MIN_OFFSET = 3;
+    unsigned availableTrains = 0;
 
     for (const auto &vec : obj)
     {
         std::string available = (isBefore(vec.front().attribute(OraP).as_int()) ? trainOk : trainNOk);
+        availableTrains += (available == trainOk);
 
         unsigned start = vec.front().attribute(OraP).as_int();
         unsigned end = vec.back().attribute(OraS).as_int();
@@ -352,6 +365,8 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
                 : getTime(end - start).substr(0, MIN_OFFSET) + "h, " +
                       getTime(end - start).substr(MIN_OFFSET - 1) + "min";
 
+        if (availableTrains == 1)
+            out += "----------\n";
         out += available + Types::toString(++index) + ". (" + getTime(start) + " -> " + getTime(end) + ", " +
                delta + ") " + orig + " -> " + dest + "\n";
     }
@@ -359,7 +374,16 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
     if (!index)
         return "";
 
-    return "At a glance (" + Types::toString(index) + " trains)\n" + out;
+    if (!availableTrains)
+        return "No trains available at this time\n" + out;
+    return "At a glance (" + Types::toString(availableTrains) + "/" +
+           Types::toString(index) + " trains available)\n" + out;
+}
+void Command::sort(std::vector<std::vector<pugi::xml_node>> &obj)
+{
+    std::sort(obj.begin(), obj.end(), [](const std::vector<pugi::xml_node> &left, const std::vector<pugi::xml_node> &right)
+              { return left.front().attribute("OraP").as_uint() < right.front().attribute("OraP").as_uint(); });
+}
 }
 
 bool Command::isBefore(unsigned time)

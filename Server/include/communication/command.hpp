@@ -88,6 +88,7 @@ public:
     getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj);
     std::string
     getBrief(const std::vector<std::vector<pugi::xml_node>> &obj);
+    void sort(std::vector<std::vector<pugi::xml_node>> &obj);
     static bool isBefore(unsigned time);
 
     /**
@@ -128,7 +129,7 @@ private:
      */
     std::pair<std::string, std::string> split();
 
-    std::string findByCity(const std::string& how);
+    std::string findByCity(const std::string &how);
 
     enum class CommandTypes
     {
