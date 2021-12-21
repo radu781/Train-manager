@@ -2,6 +2,7 @@
 #include <ctime>
 #include "communication/command.hpp"
 #include "utils/wordoperation.hpp"
+#include "utils/time.hpp"
 
 pugi::xml_document Command::doc{};
 std::unordered_set<std::string> Command::orase;
@@ -126,6 +127,8 @@ std::string Command::today()
         if (!endNode.empty() && !stations.empty())
             unsorted.push_back(stations);
     }
+
+    Command::sort(unsorted);
     return getVerbose(unsorted) + "\n" + getBrief(unsorted);
 }
 
@@ -191,15 +194,14 @@ std::string Command::findByCity(const std::string &timeType)
 
             if (WordOperation::removeDiacritics(cityStamp).find(wholeCity) != -1lu)
             {
-                if (timeType == OraS && currentTime() + 60 * delta > timeStamp &&
-                    currentTime() < timeStamp)
+                if (timeType == OraS && Time::isBetween(timeStamp - 60 * delta, timeStamp))
                     stations.push_back(std::vector<pugi::xml_node>{element});
-                else if (timeType == OraP && currentTime() + 60 * delta > timeStamp &&
-                         currentTime() < timeStamp)
+                else if (timeType == OraP && Time::isBetween(timeStamp - 60 * delta, timeStamp))
                     stations.push_back(std::vector<pugi::xml_node>{element});
             }
         }
     }
+    
     sort(stations);
     return getBrief(stations);
 }
@@ -325,10 +327,10 @@ std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &
 
             std::string delta =
                 end - start < 3600
-                    ? getTime(end - start).substr(MIN_OFFSET) + " min"
-                    : getTime(end - start);
+                    ? Time::toString(end - start).substr(MIN_OFFSET) + " min"
+                    : Time::toString(end - start);
 
-            out += "(" + getTime(start) + " -> " + getTime(end) + ", " + delta +
+            out += "(" + Time::toString(start) + " -> " + Time::toString(end) + ", " + delta +
                    ") " + orig + " -> " + dest + "\n";
         }
         out += "\n";
@@ -350,7 +352,7 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
 
     for (const auto &vec : obj)
     {
-        std::string available = (isBefore(vec.front().attribute(OraP).as_int()) ? trainOk : trainNOk);
+        std::string available = (Time::current() < vec.front().attribute(OraP).as_uint()) ? trainOk : trainNOk;
         availableTrains += (available == trainOk);
 
         unsigned start = vec.front().attribute(OraP).as_int();
@@ -361,13 +363,13 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
 
         std::string delta =
             end - start < 3600
-                ? getTime(end - start).substr(MIN_OFFSET) + " min"
-                : getTime(end - start).substr(0, MIN_OFFSET) + "h, " +
-                      getTime(end - start).substr(MIN_OFFSET - 1) + "min";
+                ? Time::toString(Time::diff(end, start)).substr(MIN_OFFSET) + " min"
+                : Time::toString(Time::diff(end, start)).substr(0, MIN_OFFSET - 1) + "h:" +
+                      Time::toString(Time::diff(end, start)).substr(MIN_OFFSET) + "min";
 
         if (availableTrains == 1)
             out += "----------\n";
-        out += available + Types::toString(++index) + ". (" + getTime(start) + " -> " + getTime(end) + ", " +
+        out += available + Types::toString(++index) + ". (" + Time::toString(start) + " -> " + Time::toString(end) + ", " +
                delta + ") " + orig + " -> " + dest + "\n";
     }
 
@@ -379,27 +381,11 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
     return "At a glance (" + Types::toString(availableTrains) + "/" +
            Types::toString(index) + " trains available)\n" + out;
 }
+
 void Command::sort(std::vector<std::vector<pugi::xml_node>> &obj)
 {
     std::sort(obj.begin(), obj.end(), [](const std::vector<pugi::xml_node> &left, const std::vector<pugi::xml_node> &right)
               { return left.front().attribute("OraP").as_uint() < right.front().attribute("OraP").as_uint(); });
-}
-}
-
-bool Command::isBefore(unsigned time)
-{
-    time_t now = ::time(0);
-    tm *ltm = localtime(&now);
-    unsigned timeInSec = ltm->tm_hour * 3600 + ltm->tm_min * 60 + ltm->tm_sec;
-
-    return timeInSec < time;
-}
-
-std::string Command::getTime(int seconds)
-{
-    char buff[16];
-    sprintf(buff, "%.2d:%.2d", seconds / 3600, seconds % 3600 / 60);
-    return buff;
 }
 
 std::string Command::trim(std::string str)

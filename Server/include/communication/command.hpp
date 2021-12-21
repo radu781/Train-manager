@@ -48,6 +48,7 @@ public:
     std::string help();
     std::string arrivals();
     std::string departures();
+    std::string late();
 
 private:
     /**
@@ -75,31 +76,10 @@ public:
      */
     static void getFile();
 
-    /**
-     * @brief Convert string with diacritics to an ascii friendly one and make
-     * the first character uppercase, leaving the other lowercase
-     *
-     * \param str String to be converted
-     * \return Converted string
-     */
-    // static std::string normalize(std::string str);
+    std::string getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj);
+    std::string getBrief(const std::vector<std::vector<pugi::xml_node>> &obj);
 
-    std::string
-    getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj);
-    std::string
-    getBrief(const std::vector<std::vector<pugi::xml_node>> &obj);
     void sort(std::vector<std::vector<pugi::xml_node>> &obj);
-    static bool isBefore(unsigned time);
-
-    /**
-     * @brief Change the format of time from seconds to a more human readable
-     * one
-     *
-     * \param seconds Time in seconds as found in the .xml file used (the
-     * hour:minutes:seconds format is compacted into seconds)
-     * \return String that follows the format [hours]h[minutes]m[seconds]s
-     */
-    static std::string getTime(int seconds);
 
     /**
      * @brief Vector containing the user command main call and arguments

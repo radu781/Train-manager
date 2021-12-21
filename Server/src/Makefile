@@ -17,6 +17,7 @@ objects = connection.o \
 		pugixml.o \
 		wordoperation.o \
 		types.o \
+		time.o \
 		main.o
 
 all: dir $(objects)
