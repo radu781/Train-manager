@@ -6,10 +6,11 @@ It simulates a real life Client-Server architecture, where the clients request d
 The clients send commands to the server.
 Currently supported commands:
 - `today`: information about the current day's trains schedule
-
-Commands to be added:
 - `departures`: information about departures in the upcoming hour, including trains that are late
 - `arrivals`: information about arrivals in the upcoming hour, including trains that are late
+
+Commands to be added:
+- `late`: lets a user signal that a train is being late, future calls to `departures` or `arrivals` will reflect this change
 
 ### Components
 Train manager consists of:
