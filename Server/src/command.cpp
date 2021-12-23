@@ -99,12 +99,12 @@ std::string Command::today()
     if (start == "" && dest == "")
         return "Did not match any cities";
 
-    std::vector<std::vector<pugi::xml_node>> unsorted;
+    std::vector<Train> unsorted;
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
         pugi::xml_node startNode, endNode;
-        std::vector<pugi::xml_node> stations;
+        Stations stations;
 
         // for each "Trasa" check if start and dest exist and occur in this order
         for (const auto &element : trasa)
@@ -125,7 +125,7 @@ std::string Command::today()
 
         // If start and dest are found, recreate the path
         if (!endNode.empty() && !stations.empty())
-            unsorted.push_back(stations);
+            unsorted.push_back({tren, stations});
     }
 
     Command::sort(unsorted);
@@ -137,15 +137,19 @@ bool Command::setContains(std::string &str)
     const unsigned threshold = str.size() / 4 + 1;
 
     for (const auto &ele : oraseFull)
-        if (WordOperation::distance(ele, str) < threshold)
-        {
-            str = ele;
+        if (ele == str)
             return true;
-        }
 
     for (const auto &ele : oraseFull)
         if (ele.find(str) != -1lu)
             return true;
+
+    for (const auto &ele : oraseFull)
+        if (WordOperation::distance(ele, str) <= threshold)
+        {
+            str = ele;
+            return true;
+        }
 
     return false;
 }
@@ -181,7 +185,7 @@ std::string Command::findByCity(const std::string &timeType)
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
     unsigned delta = atoi(command.back().c_str());
-    std::vector<std::vector<pugi::xml_node>> stations;
+    std::vector<Train> stations;
 
     for (const auto &tren : trenuri)
     {
@@ -195,13 +199,14 @@ std::string Command::findByCity(const std::string &timeType)
             if (WordOperation::removeDiacritics(cityStamp).find(wholeCity) != -1lu)
             {
                 if (timeType == OraS && Time::isBetween(timeStamp - 60 * delta, timeStamp))
-                    stations.push_back(std::vector<pugi::xml_node>{element});
+                    stations.push_back({tren, std::vector<pugi::xml_node>{element}});
                 else if (timeType == OraP && Time::isBetween(timeStamp - 60 * delta, timeStamp))
-                    stations.push_back(std::vector<pugi::xml_node>{element});
+                    stations.push_back({tren, std::vector<pugi::xml_node>{element}});
             }
         }
     }
-
+    if (stations.empty())
+        return "Could not find any departures";
     sort(stations);
     return getBrief(stations);
 }
@@ -355,17 +360,22 @@ void Command::getFile()
         oraseFull.push_back(WordOperation::removeDiacritics(ele));
 }
 
-std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj)
+std::string Command::getVerbose(const std::vector<Train> &obj)
 {
     std::string out;
     unsigned index = 0;
 
     const unsigned MIN_OFFSET = 3;
-
+    const unsigned PRINT_THRESHOLD = 1;
+    bool canPrint = false;
     for (const auto &vec : obj)
     {
-        out += Types::toString(++index) + ".\n";
-        for (const auto &node : vec)
+        unsigned minCount = 0;
+        std::string trainType = vec.root.attribute(CatTren).as_string();
+        std::string trainNumber = vec.root.attribute(Numar).as_string();
+        std::string tmp = Types::toString(++index) + ". " + trainType + trainNumber + "\n";
+
+        for (const auto &node : vec.st)
         {
             unsigned start = node.attribute(OraP).as_int();
             unsigned end = node.attribute(OraS).as_int();
@@ -378,15 +388,23 @@ std::string Command::getVerbose(const std::vector<std::vector<pugi::xml_node>> &
                     ? Time::toString(end - start).substr(MIN_OFFSET) + " min"
                     : Time::toString(end - start);
 
-            out += "(" + Time::toString(start) + " -> " + Time::toString(end) + ", " + delta +
+            tmp += "(" + Time::toString(start) + " -> " + Time::toString(end) + ", " + delta +
                    ") " + orig + " -> " + dest + "\n";
+
+            minCount++;
         }
-        out += "\n";
+        if (minCount > PRINT_THRESHOLD)
+        {
+            out += tmp + "\n";
+            canPrint = true;
+        }
     }
 
-    out = out.substr(0, out.size() - 1); // overhead but looks better
     if (!index)
         return "Found no trains";
+    if (!canPrint)
+        return "";
+    out = out.substr(0, out.size() - 1); // overhead but looks better
 
     return "Found " + Types::toString(index) + " trains:\n" + out;
 }
@@ -400,40 +418,42 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
 
     for (const auto &vec : obj)
     {
-        std::string available = (Time::current() < vec.front().attribute(OraP).as_uint()) ? trainOk : trainNOk;
+        std::string available = (Time::current() < vec.st.front().attribute(OraP).as_uint()) ? trainOk : trainNOk;
         availableTrains += (available == trainOk);
 
-        unsigned start = vec.front().attribute(OraP).as_int();
-        unsigned end = vec.back().attribute(OraS).as_int();
+        std::string trainType = vec.root.attribute(CatTren).as_string();
+        std::string trainNumber = vec.root.attribute(Numar).as_string();
 
-        std::string orig = vec.front().attribute(staOrig).as_string();
-        std::string dest = vec.back().attribute(staDest).as_string();
+        unsigned start = vec.st.front().attribute(OraP).as_int();
+        unsigned end = vec.st.back().attribute(OraS).as_int();
 
-        std::string delta =
-            end - start < 3600
-                ? Time::toString(Time::diff(end, start)).substr(MIN_OFFSET) + " min"
-                : Time::toString(Time::diff(end, start)).substr(0, MIN_OFFSET - 1) + "h:" +
-                      Time::toString(Time::diff(end, start)).substr(MIN_OFFSET) + "min";
+        std::string orig = vec.st.front().attribute(staOrig).as_string();
+        std::string dest = vec.st.back().attribute(staDest).as_string();
+
+        std::string delta = Time::diffToString(end, start);
 
         if (availableTrains == 1)
             out += "----------\n";
-        out += available + Types::toString(++index) + ". (" + Time::toString(start) + " -> " + Time::toString(end) + ", " +
+        out += available + RPAD(Types::toString(++index) + ". ", 4) +
+               RPAD(trainType + trainNumber, 11) +
+               "(" + Time::toString(start) + " -> " + Time::toString(end) + ", " +
                delta + ") " + orig + " -> " + dest + "\n";
     }
 
     if (!index)
         return "";
 
+    const std::string info = LPAD("Number", 10) + LPAD("Depart", 15) + LPAD("Arrival", 11) + LPAD("Time", 5) + "\n";
     if (!availableTrains)
-        return "No trains available at this time\n" + out;
+        return "No trains available at this time\n" + info + out;
     return "At a glance (" + Types::toString(availableTrains) + "/" +
-           Types::toString(index) + " trains available)\n" + out;
+           Types::toString(index) + " trains available)\n" + info + out;
 }
 
-void Command::sort(std::vector<std::vector<pugi::xml_node>> &obj)
+void Command::sort(std::vector<Train> &obj)
 {
-    std::sort(obj.begin(), obj.end(), [](const std::vector<pugi::xml_node> &left, const std::vector<pugi::xml_node> &right)
-              { return left.front().attribute("OraP").as_uint() < right.front().attribute("OraP").as_uint(); });
+    std::sort(obj.begin(), obj.end(), [](const Train &left, const Train &right)
+              { return left.st.front().attribute("OraP").as_uint() < right.st.front().attribute("OraP").as_uint(); });
 }
 
 std::string Command::trim(std::string str)

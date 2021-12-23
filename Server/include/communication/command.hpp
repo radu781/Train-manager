@@ -76,10 +76,17 @@ public:
      */
     static void getFile();
 
-    std::string getVerbose(const std::vector<std::vector<pugi::xml_node>> &obj);
-    std::string getBrief(const std::vector<std::vector<pugi::xml_node>> &obj);
+    using Stations = std::vector<pugi::xml_node>;
+    struct Train
+    {
+        pugi::xml_node root;
+        Stations st;
+    };
 
-    void sort(std::vector<std::vector<pugi::xml_node>> &obj);
+    std::string getVerbose(const std::vector<Train> &obj);
+    std::string getBrief(const std::vector<Train> &obj);
+
+    void sort(std::vector<Train> &obj);
 
     /**
      * @brief Vector containing the user command main call and arguments
@@ -118,7 +125,7 @@ private:
         ARRIVALS,
         LATE,
         HELP,
-        
+
         COUNT,
 
         NOT_ENOUGH_ARGS,
@@ -143,4 +150,5 @@ private:
     static constexpr const char *OraS = "OraS", *OraP = "OraP";
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
     static constexpr const char *trainOk = "[o] ", *trainNOk = "[x] ";
+    static constexpr const char *CatTren = "CategorieTren", *Numar = "Numar";
 };
