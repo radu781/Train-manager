@@ -8,6 +8,7 @@ public:
     static unsigned current();
     static std::string toString(unsigned seconds);
     static unsigned diff(unsigned endTime, unsigned startTime);
+    static std::string diffToString(unsigned endTime, unsigned startTime);
     static bool isBetween(unsigned time1, unsigned time2);
 
 private:

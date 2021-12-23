@@ -61,3 +61,23 @@ unsigned WordOperation::distance(const std::string &src, const std::string &dest
 
     return mat[dest.size() % 2][src.size()];
 }
+
+std::string WordOperation::pad(std::string str, unsigned total, Pad pad)
+{
+    assert(str.size() <= total);
+    std::string spaces;
+    for (size_t i = 0; i < total - str.size(); i++)
+        spaces += " ";
+
+    switch (pad)
+    {
+    case Pad::Left:
+        return spaces + str;
+    case Pad::Center:
+        return spaces.substr(spaces.size() / 2) + str + spaces.substr(spaces.size() / 2);
+    case Pad::Right:
+        return str + spaces;
+    default:
+        return "Unknown pad";
+    }
+}
