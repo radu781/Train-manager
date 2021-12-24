@@ -184,7 +184,12 @@ std::string Command::findByCity(const std::string &timeType)
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
-    unsigned delta = atoi(command.back().c_str());
+    int delta = atoi(command.back().c_str());
+    if (delta < 0)
+        return "Please try not to use negative values";
+    if ((unsigned)delta > Time::MINUTES_IN_DAY)
+        return "Please use the \"today\" command instead for timetables further than a day";
+
     std::vector<Train> stations;
 
     for (const auto &tren : trenuri)
@@ -206,9 +211,10 @@ std::string Command::findByCity(const std::string &timeType)
         }
     }
     if (stations.empty())
-        return "Could not find any departures";
+        return "Could not find any " + std::string(timeType == OraP ? "departures" : "arrivals") +
+               " in the upcoming " + Types::toString(delta) + " minutes";
     sort(stations);
-    return getBrief(stations);
+    return getBrief(stations, false);
 }
 
 std::string Command::arrivals()
@@ -409,11 +415,10 @@ std::string Command::getVerbose(const std::vector<Train> &obj)
     return "Found " + Types::toString(index) + " trains:\n" + out;
 }
 
-std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &obj)
+std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
 {
     std::string out;
     unsigned index = 0;
-    const unsigned MIN_OFFSET = 3;
     unsigned availableTrains = 0;
 
     for (const auto &vec : obj)
@@ -432,9 +437,9 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
 
         std::string delta = Time::diffToString(end, start);
 
-        if (availableTrains == 1)
+        if (availableTrains == 1 && needDelim)
             out += "----------\n";
-        out += available + RPAD(Types::toString(++index) + ". ", 4) +
+        out += (needDelim ? available : "[o] ") + RPAD(Types::toString(++index) + ". ", 4) +
                RPAD(trainType + trainNumber, 11) +
                "(" + Time::toString(start) + " -> " + Time::toString(end) + ", " +
                delta + ") " + orig + " -> " + dest + "\n";
@@ -446,8 +451,11 @@ std::string Command::getBrief(const std::vector<std::vector<pugi::xml_node>> &ob
     const std::string info = LPAD("Number", 10) + LPAD("Depart", 15) + LPAD("Arrival", 11) + LPAD("Time", 5) + "\n";
     if (!availableTrains)
         return "No trains available at this time\n" + info + out;
-    return "At a glance (" + Types::toString(availableTrains) + "/" +
-           Types::toString(index) + " trains available)\n" + info + out;
+    return (needDelim
+                ? "At a glance (" + Types::toString(availableTrains) + "/" +
+                      Types::toString(index) + " trains available)\n"
+                : "") +
+           info + out;
 }
 
 void Command::sort(std::vector<Train> &obj)
