@@ -202,10 +202,14 @@ std::string Command::findByCity(const std::string &timeType)
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
-    int delta = atoi(command.back().c_str());
-    if (delta < 0)
+    unsigned delta = extractTime(command.back());
+    if (delta == -1u)
         return "Please try not to use negative values";
-    if ((unsigned)delta > Time::MINUTES_IN_DAY)
+    if (delta == -2u)
+        return "Please use some digits too";
+    if (delta == -3u)
+        return "Please use only number or literals as shown in \"help departures\"";
+    if ((unsigned)delta > Time::SECONDS_IN_DAY)
         return "Please use the \"today\" command instead for timetables further than a day";
 
     std::vector<Train> stations;
@@ -221,9 +225,9 @@ std::string Command::findByCity(const std::string &timeType)
 
             if (contains(matching, cityStr))
             {
-                if (timeType == OraS && Time::isBetween(timeStamp - 60 * delta, timeStamp))
+                if (timeType == OraS && Time::isBetween(timeStamp - delta, timeStamp))
                     stations.push_back({tren, std::vector<pugi::xml_node>{element}});
-                else if (timeType == OraP && Time::isBetween(timeStamp - 60 * delta, timeStamp))
+                else if (timeType == OraP && Time::isBetween(timeStamp - delta, timeStamp))
                     stations.push_back({tren, std::vector<pugi::xml_node>{element}});
             }
         }
@@ -233,6 +237,49 @@ std::string Command::findByCity(const std::string &timeType)
                " in the upcoming " + Types::toString<int>(delta) + " minutes";
     sort(stations);
     return getBrief(stations, false, timeType == std::string(OraS));
+}
+
+unsigned Command::extractTime(const std::string &str)
+{
+    if (str.find('-') != -1lu)
+        return -1u;
+    if (std::none_of(str.begin(), str.end(), isdigit))
+        return -2u;
+
+    const char *literals = "smhSMH";
+    if (str.find_first_of(literals) == -1lu)
+        return atoi(str.c_str());
+
+    unsigned seconds = 0, minutes = 0, hours = 0;
+    for (size_t last = 0, next = str.find_first_of(literals);
+         /* last != next &&*/ next != -1lu;
+         last = next + 1, next = str.find_first_of(literals, last))
+    {
+        std::string ele = str.substr(last, next - last);
+        LOG_DEBUG(ele);
+
+        switch (str[next])
+        {
+        case 's':
+        case 'S':
+            seconds += atoi(ele.c_str());
+            break;
+        case 'm':
+        case 'M':
+            minutes += atoi(ele.c_str());
+            break;
+        case 'h':
+        case 'H':
+            hours += atoi(ele.c_str());
+            break;
+        default:
+            LOG_DEBUG("Unexpected literal " + ele + " " + ele[next]);
+        }
+    }
+
+    if (hours + minutes + seconds == 0)
+        return -3u;
+    return hours * 3600 + minutes * 60 + seconds;
 }
 
 std::string Command::arrivals()
@@ -282,8 +329,10 @@ today cluj napoca iasi\nwill return all trains from cluj napoca to iasi.";
 point in the next delta minutes.\nIt has " +
                Types::toString<int>(cmd.mandatory) +
                " mandatory arguments (a starting city and a time in minutes). \
-Example usage:\n\tdepartures iasi 10\nwill return the trains that depart from \
-iasi in the following 10 minutes.";
+You can either use numbers for seconds or literals for more accurate queries. \
+The accepted literals are \"s\", \"m\", \"h\" for seconds, minutes, hours \
+respectively. Example usage:\n\tdepartures iasi 10m\nwill return the trains \
+that depart from iasi in the following 10 minutes.";
 
     case CommandTypes::ARRIVALS:
         return "The arrivals command returns all arrivals from a starting \

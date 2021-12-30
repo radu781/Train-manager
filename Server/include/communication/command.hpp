@@ -117,6 +117,7 @@ private:
     std::pair<std::vector<std::string>, std::vector<std::string>> splitNames();
 
     std::string findByCity(const std::string &how);
+    unsigned extractTime(const std::string &str);
 
     enum class CommandTypes
     {
