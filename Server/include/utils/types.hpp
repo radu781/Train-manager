@@ -5,6 +5,11 @@
 class Types
 {
 public:
-    static std::string toString(const int val);
-    static std::string toString(const unsigned val);
+    template <typename T>
+    static std::string toString(const T &val)
+    {
+        std::ostringstream out;
+        out << val;
+        return out.str();
+    }
 };

@@ -57,12 +57,12 @@ std::string Command::execute()
         {
         case CommandTypes::NOT_ENOUGH_ARGS:
             return "Command " + command[0] + " has " +
-                   Types::toString(cmd.mandatory) + " mandatory arguments, " +
-                   Types::toString(command.size() - 1u) + " provided";
+                   Types::toString<unsigned>(cmd.mandatory) + " mandatory arguments, " +
+                   Types::toString<unsigned>(command.size() - 1u) + " provided";
         case CommandTypes::TOO_MANY_ARGS:
             return "Command " + command[0] + " has up to " +
-                   Types::toString(cmd.mandatory + cmd.optional) + " arguments, " +
-                   Types::toString(command.size() - 1u) + "provided";
+                   Types::toString<unsigned>(cmd.mandatory + cmd.optional) + " arguments, " +
+                   Types::toString<unsigned>(command.size() - 1u) + " provided";
         case CommandTypes::NOT_FOUND:
             return "Command " + command[0] + " not found";
 
@@ -254,7 +254,7 @@ std::string Command::help()
     case CommandTypes::TODAY:
         return "The today command returns all trains from a starting point to \
 an end point.\nIt has " +
-               Types::toString(cmd.mandatory) + " mandatory arguments \
+               Types::toString<int>(cmd.mandatory) + " mandatory arguments \
 (at least a starting and destination city are needed). City names are \
 automatically detected, there is no need to separate them, for example\n\t\
 today cluj napoca iasi\nwill return all trains from cluj napoca to iasi.";
@@ -262,7 +262,7 @@ today cluj napoca iasi\nwill return all trains from cluj napoca to iasi.";
     case CommandTypes::DEPARTURES:
         return "The departures command returns all departures from a starting \
 point in the next delta minutes.\nIt has " +
-               Types::toString(cmd.mandatory) +
+               Types::toString<int>(cmd.mandatory) +
                " mandatory arguments (a starting city and a time in minutes). \
 Example usage:\n\tdepartures iasi 10\nwill return the trains that depart from \
 iasi in the following 10 minutes.";
@@ -270,7 +270,7 @@ iasi in the following 10 minutes.";
     case CommandTypes::ARRIVALS:
         return "The arrivals command returns all arrivals from a starting \
 point in the next delta minutes.\nIt has " +
-               Types::toString(cmd.mandatory) +
+               Types::toString<int>(cmd.mandatory) +
                " mandatory arguments (a starting city and a time in minutes). \
 Example usage:\n\tarrivals iasi 15\nwill return the trains that arrive in iasi \
 in the following 15 minutes.";
@@ -282,7 +282,7 @@ in the following 15 minutes.";
         return "Why would you need help about a help command?";
 
     default:
-        LOG_DEBUG("Unexpected " + command[1] + " type: " + Types::toString(int(cmd.type)));
+        LOG_DEBUG("Unexpected " + command[1] + " type: " + Types::toString<unsigned>(unsigned(cmd.type)));
         return "Try again";
     }
 }
@@ -379,7 +379,7 @@ std::string Command::getVerbose(const std::vector<Train> &obj)
         unsigned minCount = 0;
         std::string trainType = vec.root.attribute(CatTren).as_string();
         std::string trainNumber = vec.root.attribute(Numar).as_string();
-        std::string tmp = Types::toString(++index) + ". " + trainType + trainNumber + "\n";
+        std::string tmp = Types::toString<unsigned>(++index) + ". " + trainType + trainNumber + "\n";
 
         for (const auto &node : vec.st)
         {
@@ -412,7 +412,7 @@ std::string Command::getVerbose(const std::vector<Train> &obj)
         return "";
     out = out.substr(0, out.size() - 1); // overhead but looks better
 
-    return "Found " + Types::toString(index) + " trains:\n" + out;
+    return "Found " + Types::toString<unsigned>(index) + " trains:\n" + out;
 }
 
 std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
@@ -439,7 +439,7 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
 
         if (availableTrains == 1 && needDelim)
             out += "----------\n";
-        out += (needDelim ? available : "[o] ") + RPAD(Types::toString(++index) + ". ", 4) +
+        out += (needDelim ? available : "[o] ") + RPAD(Types::toString<unsigned>(++index) + ". ", 4) +
                RPAD(trainType + trainNumber, 11) +
                "(" + Time::toString(start) + " -> " + Time::toString(end) + ", " +
                delta + ") " + orig + " -> " + dest + "\n";
@@ -452,8 +452,8 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
     if (!availableTrains)
         return "No trains available at this time\n" + info + out;
     return (needDelim
-                ? "At a glance (" + Types::toString(availableTrains) + "/" +
-                      Types::toString(index) + " trains available)\n"
+                ? "At a glance (" + Types::toString<unsigned>(availableTrains) + "/" +
+                      Types::toString<unsigned>(index) + " trains available)\n"
                 : "") +
            info + out;
 }
