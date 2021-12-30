@@ -95,36 +95,46 @@ std::string Command::today()
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
-    auto [start, dest] = split();
-    if (start == "" && dest == "")
-        return "Did not match any cities";
+    std::vector<std::string> startVec, destVec;
+    try
+    {
+        auto [start, dest] = splitNames();
+        startVec = start;
+        destVec = dest;
+    }
+    catch (const SearchNotRefined &e)
+    {
+        return "Please refine your search";
+    }
 
+    if (startVec.empty() || destVec.empty())
+        return "Did not match start or destination city";
     std::vector<Train> unsorted;
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
-        pugi::xml_node startNode, endNode;
+        pugi::xml_node startNode, destNode;
         Stations stations;
-
-        // for each "Trasa" check if start and dest exist and occur in this order
         for (const auto &element : trasa)
         {
-            if (WordOperation::removeDiacritics(element.attribute(staOrig).as_string())
-                    .find(start) != -1lu)
-                startNode = element;
-            if (WordOperation::removeDiacritics(element.attribute(staDest).as_string())
-                        .find(dest) != -1lu &&
-                !startNode.empty())
-                endNode = element;
+            std::string testStart = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
+            std::string testDest = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
 
+            if (contains(startVec, testStart)) // only the newest one
+                startNode = element;
             if (!startNode.empty())
                 stations.push_back(element);
-            if (!endNode.empty())
+
+            if (contains(destVec, testDest))
+            {
+                destNode = element;
+                if (!stations.empty())
+                    stations.pop_back();
                 break;
+            }
         }
 
-        // If start and dest are found, recreate the path
-        if (!endNode.empty() && !stations.empty())
+        if (!stations.empty() && !destNode.empty())
             unsorted.push_back({tren, stations});
     }
 
@@ -132,29 +142,30 @@ std::string Command::today()
     return getVerbose(unsorted) + "\n" + getBrief(unsorted);
 }
 
-bool Command::setContains(std::string &str)
+std::vector<std::string> Command::find(const std::string &str)
 {
-    const unsigned threshold = str.size() / 4 + 1;
+    const unsigned MAX_SIZE_ADJUSTMENT = 5;
+    const unsigned threshold = str.size() <= MAX_SIZE_ADJUSTMENT ? 2 : (str.size() / 4 + 1);
+    std::vector<std::string> out;
 
     for (const auto &ele : oraseFull)
-        if (ele == str)
-            return true;
+        if ((ele == str || ele.find(str) != -1lu ||
+             WordOperation::distance(ele, str) <= threshold) &&
+            ele != "")
+            out.push_back(WordOperation::removeDiacritics(ele));
 
-    for (const auto &ele : oraseFull)
-        if (ele.find(str) != -1lu)
-            return true;
+    return out;
+}
 
-    for (const auto &ele : oraseFull)
-        if (WordOperation::distance(ele, str) <= threshold)
-        {
-            str = ele;
+bool Command::contains(const std::vector<std::string> &vec, const std::string &str)
+{
+    for (const auto &s : vec)
+        if (s == str)
             return true;
-        }
-
     return false;
 }
 
-std::pair<std::string, std::string> Command::split()
+std::pair<std::vector<std::string>, std::vector<std::string>> Command::splitNames()
 {
     for (size_t i = 1; i < command.size() - 1; i++)
     {
@@ -164,10 +175,10 @@ std::pair<std::string, std::string> Command::split()
         for (size_t j = i + 2; j < command.size(); j++)
             dest += " " + command[j];
 
-        std::string cleanStart = WordOperation::removeDiacritics(start);
-        std::string cleanDest = WordOperation::removeDiacritics(dest);
-        if (setContains(cleanStart) && setContains(cleanDest))
-            return {cleanStart, cleanDest};
+        auto startVec = find(WordOperation::removeDiacritics(start));
+        auto endVec = find(WordOperation::removeDiacritics(dest));
+        if (!startVec.empty() && !endVec.empty())
+            return {startVec, endVec};
     }
     return {};
 }
@@ -179,7 +190,9 @@ std::string Command::findByCity(const std::string &timeType)
     for (size_t i = 1; i < command.size() - 1; i++)
         wholeCity += command[i];
     wholeCity = WordOperation::removeDiacritics(wholeCity);
-    if (!setContains(wholeCity))
+
+    std::vector<std::string> matching = find(wholeCity);
+    if (matching.empty())
         return "Please enter a valid city";
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
@@ -199,9 +212,9 @@ std::string Command::findByCity(const std::string &timeType)
         for (const auto &element : trasa)
         {
             unsigned timeStamp = element.attribute(timeType.c_str()).as_int();
-            std::string cityStamp = element.attribute(staOrig).as_string();
+            std::string cityStr = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
 
-            if (WordOperation::removeDiacritics(cityStamp).find(wholeCity) != -1lu)
+            if (contains(matching, cityStr))
             {
                 if (timeType == OraS && Time::isBetween(timeStamp - 60 * delta, timeStamp))
                     stations.push_back({tren, std::vector<pugi::xml_node>{element}});
@@ -212,9 +225,9 @@ std::string Command::findByCity(const std::string &timeType)
     }
     if (stations.empty())
         return "Could not find any " + std::string(timeType == OraP ? "departures" : "arrivals") +
-               " in the upcoming " + Types::toString(delta) + " minutes";
+               " in the upcoming " + Types::toString<int>(delta) + " minutes";
     sort(stations);
-    return getBrief(stations, false);
+    return getBrief(stations, false, timeType == std::string(OraS));
 }
 
 std::string Command::arrivals()

@@ -99,14 +99,14 @@ public:
 
 private:
     /**
-     * @brief Check if the unordered_set contains the string, also modify the
-     * string if a close match was found
+     * @brief Check if the unordered_set contains the string
      *
      * \param str String to be searched for in the string. Substrings are
      * considered valid too
-     * \return True if the string could be found
+     * \return Vector of all matches
      */
-    static bool setContains(std::string &str);
+    static std::vector<std::string> find(const std::string &str);
+    static bool contains(const std::vector<std::string>& vec, const std::string& str);
 
     /**
      * @brief Split the command member into two strings by following the rule:
@@ -114,7 +114,7 @@ private:
      *
      * \return 2 valid city names if found, empty strings otherwise
      */
-    std::pair<std::string, std::string> split();
+    std::pair<std::vector<std::string>, std::vector<std::string>> splitNames();
 
     std::string findByCity(const std::string &how);
 

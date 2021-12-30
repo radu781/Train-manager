@@ -18,13 +18,24 @@ private:
 };
 
 /**
- * @brief Exception thrown when the server starts up 
+ * @brief Exception thrown when the server starts up
  */
 class ServerSetupException
     : public std::exception
 {
 public:
     ServerSetupException(const std::string &exception);
+    const char *what() const throw();
+
+private:
+    std::string exception;
+};
+
+class SearchNotRefined
+    : public std::exception
+{
+public:
+    SearchNotRefined(const std::string &exception);
     const char *what() const throw();
 
 private:
