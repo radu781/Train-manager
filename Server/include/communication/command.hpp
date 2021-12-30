@@ -84,7 +84,7 @@ public:
     };
 
     std::string getVerbose(const std::vector<Train> &obj);
-    std::string getBrief(const std::vector<Train> &obj, bool needDelim = true);
+    std::string getBrief(const std::vector<Train> &obj, bool needDelim = true, bool reverse = false);
 
     void sort(std::vector<Train> &obj);
 

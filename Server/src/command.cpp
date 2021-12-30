@@ -167,6 +167,11 @@ bool Command::contains(const std::vector<std::string> &vec, const std::string &s
 
 std::pair<std::vector<std::string>, std::vector<std::string>> Command::splitNames()
 {
+    const unsigned MIN_LENGTH_THRESHOLD = 3;
+    for (size_t i = 1; i < command.size() - 1; i++)
+        if (command[i].size() < MIN_LENGTH_THRESHOLD)
+            throw SearchNotRefined("");
+
     for (size_t i = 1; i < command.size() - 1; i++)
     {
         std::string start = command[1], dest = command[i + 1];
@@ -428,7 +433,7 @@ std::string Command::getVerbose(const std::vector<Train> &obj)
     return "Found " + Types::toString<unsigned>(index) + " trains:\n" + out;
 }
 
-std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
+std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim, bool reverse)
 {
     std::string out;
     unsigned index = 0;
@@ -444,9 +449,13 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
 
         unsigned start = vec.st.front().attribute(OraP).as_int();
         unsigned end = vec.st.back().attribute(OraS).as_int();
+        if (reverse)
+            std::swap(start, end);
 
         std::string orig = vec.st.front().attribute(staOrig).as_string();
         std::string dest = vec.st.back().attribute(staDest).as_string();
+        if (reverse)
+            std::swap(orig, dest);
 
         std::string delta = Time::diffToString(end, start);
 
