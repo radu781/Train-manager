@@ -5,8 +5,8 @@
 #include "utils/time.hpp"
 
 pugi::xml_document Command::doc{};
-std::unordered_set<std::string> Command::orase;
-std::vector<std::string> Command::oraseFull;
+std::unordered_set<std::string> Command::cityNames;
+std::unordered_set<std::string> Command::trainNumbers;
 
 Command::Command(const std::string &str)
 {
@@ -95,7 +95,7 @@ std::string Command::today()
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
-    std::vector<std::string> startVec, destVec;
+    std::unordered_set<std::string> startVec, destVec;
     try
     {
         auto [start, dest] = splitNames();
@@ -109,6 +109,7 @@ std::string Command::today()
 
     if (startVec.empty() || destVec.empty())
         return "Did not match start or destination city";
+
     std::vector<Train> unsorted;
     for (const auto &tren : trenuri)
     {
@@ -120,12 +121,12 @@ std::string Command::today()
             std::string testStart = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
             std::string testDest = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
 
-            if (contains(startVec, testStart)) // only the newest one
+            if (startVec.contains(testStart))
                 startNode = element;
             if (!startNode.empty())
                 stations.push_back(element);
 
-            if (contains(destVec, testDest))
+            if (destVec.contains(testDest))
             {
                 destNode = element;
                 if (!stations.empty())
@@ -142,30 +143,31 @@ std::string Command::today()
     return getVerbose(unsorted) + "\n" + getBrief(unsorted);
 }
 
-std::vector<std::string> Command::find(const std::string &str)
+std::unordered_set<std::string> Command::find(const std::string &str)
 {
-    const unsigned MAX_SIZE_ADJUSTMENT = 5;
-    const unsigned threshold = str.size() <= MAX_SIZE_ADJUSTMENT ? 2 : (str.size() / 4 + 1);
-    std::vector<std::string> out;
+    const unsigned MAX_SIZE_ADJUSTMENT = 4;
+#ifndef FIND_THRESHOLD
+    const unsigned threshold = str.size() <= MAX_SIZE_ADJUSTMENT ? 1 : (str.size() / 4 + 1);
+#else
+    const unsigned threshold = FIND_THRESHOLD;
+#endif
+    std::unordered_set<std::string> out;
 
-    for (const auto &ele : oraseFull)
-        if ((ele == str || ele.find(str) != -1lu ||
+    for (const auto &ele : cityNames)
+        if ((ele == str ||
+#ifdef FIND_THRESHOLD
+#if FIND_THRESHOLD > 1
+             ele.find(str) != -1lu ||
+#endif
+#endif
              WordOperation::distance(ele, str) <= threshold) &&
             ele != "")
-            out.push_back(WordOperation::removeDiacritics(ele));
+            out.insert(WordOperation::removeDiacritics(ele));
 
     return out;
 }
 
-bool Command::contains(const std::vector<std::string> &vec, const std::string &str)
-{
-    for (const auto &s : vec)
-        if (s == str)
-            return true;
-    return false;
-}
-
-std::pair<std::vector<std::string>, std::vector<std::string>> Command::splitNames()
+std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> Command::splitNames()
 {
     const unsigned MIN_LENGTH_THRESHOLD = 3;
     for (size_t i = 1; i < command.size() - 1; i++)
@@ -196,7 +198,7 @@ std::string Command::findByCity(const std::string &timeType)
         wholeCity += command[i];
     wholeCity = WordOperation::removeDiacritics(wholeCity);
 
-    std::vector<std::string> matching = find(wholeCity);
+    std::unordered_set<std::string> matching = find(wholeCity);
     if (matching.empty())
         return "Please enter a valid city";
 
@@ -223,7 +225,7 @@ std::string Command::findByCity(const std::string &timeType)
             unsigned timeStamp = element.attribute(timeType.c_str()).as_int();
             std::string cityStr = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
 
-            if (contains(matching, cityStr))
+            if (matching.contains(cityStr))
             {
                 if (timeType == OraS && Time::isBetween(timeStamp - delta, timeStamp))
                     stations.push_back({tren, std::vector<pugi::xml_node>{element}});
@@ -419,18 +421,23 @@ void Command::getFile()
 
     auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
+    std::unordered_set<std::string> tmpCities;
     for (const auto &tren : trenuri)
     {
         auto trasa = tren.child("Trase").child("Trasa").children();
         for (const auto &ele : trasa)
         {
-            orase.insert(ele.attribute(staOrig).as_string());
-            orase.insert(ele.attribute(staDest).as_string());
+            tmpCities.insert(ele.attribute(staOrig).as_string());
+            tmpCities.insert(ele.attribute(staDest).as_string());
         }
+
+        const std::string categ = tren.attribute(CatTren).as_string();
+        const std::string number = tren.attribute(Numar).as_string();
+        trainNumbers.insert(categ + number);
     }
 
-    for (const auto &ele : orase)
-        oraseFull.push_back(WordOperation::removeDiacritics(ele));
+    for (const auto &ele : tmpCities)
+        cityNames.insert(WordOperation::removeDiacritics(ele));
 }
 
 std::string Command::getVerbose(const std::vector<Train> &obj)

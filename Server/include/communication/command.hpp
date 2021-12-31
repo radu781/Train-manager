@@ -94,8 +94,8 @@ public:
     std::vector<std::string> command;
 
     static pugi::xml_document doc;
-    static std::unordered_set<std::string> orase;
-    static std::vector<std::string> oraseFull;
+    static std::unordered_set<std::string> cityNames;
+    static std::unordered_set<std::string> trainNumbers;
 
 private:
     /**
@@ -105,8 +105,7 @@ private:
      * considered valid too
      * \return Vector of all matches
      */
-    static std::vector<std::string> find(const std::string &str);
-    static bool contains(const std::vector<std::string>& vec, const std::string& str);
+    static std::unordered_set<std::string> find(const std::string &str);
 
     /**
      * @brief Split the command member into two strings by following the rule:
@@ -114,7 +113,7 @@ private:
      *
      * \return 2 valid city names if found, empty strings otherwise
      */
-    std::pair<std::vector<std::string>, std::vector<std::string>> splitNames();
+    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> splitNames();
 
     std::string findByCity(const std::string &how);
     unsigned extractTime(const std::string &str);

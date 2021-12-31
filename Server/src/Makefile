@@ -1,7 +1,7 @@
 # src directory makefile
 
 FLAGS = -c -Wall -O0 -g --std=c++2a -fdiagnostics-color=always $(DEFINES) $(INCLUDES)
-DEFINES = -D ENABLE_COMM_LOGGING -D ENABLE_DEBG_LOGGING
+DEFINES = -D ENABLE_COMM_LOGGING -D ENABLE_DEBG_LOGGING -D FIND_THRESHOLD=2
 INCLUDES = -I ../include
 LIBS = -lpthread
 
