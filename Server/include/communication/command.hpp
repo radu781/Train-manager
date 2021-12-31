@@ -51,15 +51,6 @@ public:
     std::string late();
 
 private:
-    /**
-     * @brief Trims the string by removing leading and trailing whitespace
-     *
-     * \param str Deep copy of string to be trimmed
-     * \return Trimmed string
-     */
-    std::string trim(std::string str);
-
-private:
     enum class CommandTypes;
 
 public:
@@ -98,6 +89,11 @@ public:
     static std::unordered_set<std::string> trainNumbers;
 
 private:
+    enum class FindBy
+    {
+        CITY,
+        TRAIN
+    };
     /**
      * @brief Check if the unordered_set contains the string
      *
@@ -105,7 +101,7 @@ private:
      * considered valid too
      * \return Vector of all matches
      */
-    static std::unordered_set<std::string> find(const std::string &str);
+    static std::unordered_set<std::string> match(const std::string &str, FindBy criteria);
 
     /**
      * @brief Split the command member into two strings by following the rule:
@@ -143,7 +139,7 @@ private:
         {"today", {2, -1u, CommandTypes::TODAY}},
         {"departures", {2, -1u, CommandTypes::DEPARTURES}},
         {"arrivals", {2, -1u, CommandTypes::ARRIVALS}},
-        {"late", {1, -1u, CommandTypes::LATE}},
+        {"late", {2, -1u, CommandTypes::LATE}},
         {"help", {0, 1u, CommandTypes::HELP}},
     };
 

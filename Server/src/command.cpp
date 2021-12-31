@@ -13,7 +13,7 @@ Command::Command(const std::string &str)
     if (str == "")
         return;
 
-    std::string trimmed = trim(str);
+    std::string trimmed = WordOperation::trim(str);
     std::istringstream in(trimmed);
     std::string token;
     // TODO: add more delims in the future
@@ -143,25 +143,24 @@ std::string Command::today()
     return getVerbose(unsorted) + "\n" + getBrief(unsorted);
 }
 
-std::unordered_set<std::string> Command::find(const std::string &str)
+std::unordered_set<std::string> Command::match(const std::string &str, FindBy criteria)
 {
-    const unsigned MAX_SIZE_ADJUSTMENT = 4;
+    assert(criteria == FindBy::CITY || criteria == FindBy::TRAIN);
 #ifndef FIND_THRESHOLD
+    const unsigned MAX_SIZE_ADJUSTMENT = 4;
     const unsigned threshold = str.size() <= MAX_SIZE_ADJUSTMENT ? 1 : (str.size() / 4 + 1);
 #else
     const unsigned threshold = FIND_THRESHOLD;
 #endif
     std::unordered_set<std::string> out;
 
-    for (const auto &ele : cityNames)
-        if ((ele == str ||
-#ifdef FIND_THRESHOLD
-#if FIND_THRESHOLD > 1
-             ele.find(str) != -1lu ||
-#endif
-#endif
-             WordOperation::distance(ele, str) <= threshold) &&
-            ele != "")
+    std::string search = criteria == FindBy::CITY ? WordOperation::removeDiacritics(str) : str;
+
+    for (const auto &ele : criteria == FindBy::CITY ? cityNames : trainNumbers)
+        if (ele == search)
+            return {WordOperation::removeDiacritics(ele)};
+        else if ((WordOperation::distance(ele, search) <= threshold && ele != "") ||
+                 (threshold > 1 && ele.find(search) != -1lu))
             out.insert(WordOperation::removeDiacritics(ele));
 
     return out;
@@ -182,8 +181,8 @@ std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> Comm
         for (size_t j = i + 2; j < command.size(); j++)
             dest += " " + command[j];
 
-        auto startVec = find(WordOperation::removeDiacritics(start));
-        auto endVec = find(WordOperation::removeDiacritics(dest));
+        auto startVec = match(WordOperation::removeDiacritics(start), FindBy::CITY);
+        auto endVec = match(WordOperation::removeDiacritics(dest), FindBy::CITY);
         if (!startVec.empty() && !endVec.empty())
             return {startVec, endVec};
     }
@@ -198,7 +197,7 @@ std::string Command::findByCity(const std::string &timeType)
         wholeCity += command[i];
     wholeCity = WordOperation::removeDiacritics(wholeCity);
 
-    std::unordered_set<std::string> matching = find(wholeCity);
+    std::unordered_set<std::string> matching = match(wholeCity, FindBy::CITY);
     if (matching.empty())
         return "Please enter a valid city";
 
@@ -296,7 +295,35 @@ std::string Command::departures()
 
 std::string Command::late()
 {
-    return "late call";
+    std::string trainName;
+    for (size_t i = 1; i < command.size() - 1; i++)
+        trainName += command[i] + " ";
+    trainName = WordOperation::removeDiacritics(trainName);
+
+    auto nameFind = match(trainName, FindBy::CITY);
+    if (nameFind.size() == 1)
+        return "Found train name: " + trainName;
+    if (nameFind.size() > 1)
+    {
+        std::string out;
+        for (const auto &name : nameFind)
+            out += name.substr(0, name.size() - 1) + ", ";
+        out = out.substr(0, out.size() - 2);
+        return "Found multiple matches, please refine your search:\n" + out;
+    }
+
+    auto trainFind = match(trainName, FindBy::TRAIN);
+    if (trainFind.size() == 1)
+        return "Found train number: " + command[1];
+    if (trainFind.size() > 1)
+    {
+        std::string out;
+        for (const auto &train : trainFind)
+            out += train + ", ";
+        out = out.substr(0, out.size() - 2);
+        return "Found multiple matches, please refine your search:\n" + out;
+    }
+    return "Found no train name or number";
 }
 
 std::string Command::help()
@@ -540,19 +567,4 @@ void Command::sort(std::vector<Train> &obj)
 {
     std::sort(obj.begin(), obj.end(), [](const Train &left, const Train &right)
               { return left.st.front().attribute("OraP").as_uint() < right.st.front().attribute("OraP").as_uint(); });
-}
-
-std::string Command::trim(std::string str)
-{
-    if (str == "")
-        return "";
-
-    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](char c)
-                                        { return !std::isspace(c); }));
-    str.erase(std::find_if(str.rbegin(), str.rend(), [](char c)
-                           { return !std::isspace(c); })
-                  .base(),
-              str.end());
-
-    return str;
 }

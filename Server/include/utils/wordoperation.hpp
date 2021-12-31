@@ -19,4 +19,11 @@ public:
         Right
     };
     static std::string pad(std::string str, unsigned total, Pad pad);
+    /**
+     * @brief Trims the string by removing leading and trailing whitespace
+     *
+     * \param str Deep copy of string to be trimmed
+     * \return Trimmed string
+     */
+    static std::string trim(std::string str);
 };
