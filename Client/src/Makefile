@@ -7,7 +7,7 @@ LIBS = -lpthread
 BUILD_DIR = ../build
 BIN_DIR = ../bin
 
-objects = connection.o exceptions.o iomanager.o main.o
+objects = connection.o exceptions.o iomanager.o loadingbar.o main.o
 
 all: dir $(objects)
 	g++ -g $(BUILD_DIR)/*.o -o $(BIN_DIR)/main $(LIBS)
