@@ -2,8 +2,8 @@
 #include <chrono>
 #include <cstring>
 #include <iostream>
-#include <netinet/in.h>
 #include <string>
+#include <mutex>
 #include <thread>
 #include <unistd.h>
 #include "communication/connection.hpp"
@@ -13,6 +13,7 @@
 Connection *Connection::instance = nullptr;
 int Connection::serverFD = 0;
 bool Connection::connected = false;
+sockaddr_in Connection::serv_addr;
 
 Connection *Connection::getInstance()
 {
@@ -41,8 +42,6 @@ void Connection::run()
 
 void Connection::makeConnection()
 {
-    struct sockaddr_in serv_addr;
-
     if ((serverFD = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         throw ConnectionException("Socket creation error");
 
@@ -74,6 +73,7 @@ void Connection::makeConnection()
 
 void Connection::closeConnection()
 {
+    std::lock_guard<std::mutex> lock(m);
     close(serverFD);
     connected = false;
 }

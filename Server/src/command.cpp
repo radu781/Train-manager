@@ -7,6 +7,7 @@
 pugi::xml_document Command::doc{};
 std::unordered_set<std::string> Command::cityNames;
 std::unordered_set<std::string> Command::trainNumbers;
+std::mutex Command::m;
 
 Command::Command(const std::string &str)
 {
@@ -431,16 +432,13 @@ void Command::getFile()
 
     if (!std::filesystem::exists(localPath))
     {
-        std::mutex m;
-        m.lock();
+        std::lock_guard<std::mutex> lock(m);
 
         LOG_DEBUG("Xml does not exist locally, attempting to download");
         if (system(("wget " + web + args).c_str()) < 0)
             LOG_DEBUG("Xml failed to download");
         else
             LOG_DEBUG("Xml downloaded");
-
-        m.unlock();
     }
 
     LOG_DEBUG("Loaded xml");

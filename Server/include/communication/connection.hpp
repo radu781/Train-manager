@@ -96,4 +96,5 @@ private:
      * server on
      */
     static const unsigned PORT = 8080;
+    static std::mutex m;
 };

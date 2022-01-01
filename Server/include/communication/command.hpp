@@ -114,6 +114,8 @@ private:
     std::string findByCity(const std::string &how);
     unsigned extractTime(const std::string &str);
 
+    static std::mutex m;
+
     enum class CommandTypes
     {
         TODAY,

@@ -65,4 +65,5 @@ private:
      */
     static const unsigned PORT = 8080;
     static bool connected;
+    static sockaddr_in serv_addr;
 };

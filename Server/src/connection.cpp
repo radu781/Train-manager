@@ -8,6 +8,7 @@ Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;
 sockaddr_in Connection::address{};
 std::unordered_map<int, Client *> Connection::clients;
+std::mutex Connection::m;
 
 Connection *Connection::getInstance()
 {
@@ -65,12 +66,10 @@ possible cause: Address already in use");
 
 void Connection::closeConnection(Client *client)
 {
-    std::mutex m;
-    m.lock();
+    std::lock_guard<std::mutex> lock(m);
     close(client->sock);
     client->isConnected = false;
     LOG_COMMUNICATION("[Lost connection]", false, client->sock);
-    m.unlock();
 }
 
 void Connection::runIndividual(Client *client)

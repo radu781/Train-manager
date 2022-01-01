@@ -4,6 +4,8 @@
 
 std::string WordOperation::removeDiacritics(std::string str)
 {
+    if (str == "")
+        return "";
     const std::unordered_map<const char *, char> dict = {
         {"ă", 'a'},
         {"â", 'a'},
@@ -32,7 +34,11 @@ std::string WordOperation::removeDiacritics(std::string str)
         }
     }
 
-    return str;
+    for (size_t i = 0; i < str.size() - 1; i++)
+        if (ispunct(str[i]) && islower(str[i + 1]))
+            str[i + 1] = toupper(str[i + 1]);
+
+    return str.substr(0, str.size() - 1);
 }
 
 unsigned WordOperation::distance(const std::string &src, const std::string &dest)
@@ -80,4 +86,19 @@ std::string WordOperation::pad(std::string str, unsigned total, Pad pad)
     default:
         return "Unknown pad";
     }
+}
+
+std::string WordOperation::trim(std::string str)
+{
+    if (str == "")
+        return "";
+
+    str.erase(str.begin(), std::find_if(str.begin(), str.end(), [](char c)
+                                        { return !std::isspace(c); }));
+    str.erase(std::find_if(str.rbegin(), str.rend(), [](char c)
+                           { return !std::isspace(c); })
+                  .base(),
+              str.end());
+
+    return str;
 }
