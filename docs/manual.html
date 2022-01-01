@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train manager documentation</title>
+</head>
+
+<body>
+    <!-- title -->
+    <div>
+        <h1 class="title">Train manager</h1>
+        <h3 class="subtitle">
+            <p>
+                <span class="highlight">Abstract</span> C++ CLI application for managing train schedules (as a user)
+                that simulates a real life Client-Server architecture. An .xml file is used as a database.
+            </p>
+            <p>
+                <span class="highlight">Keywords</span> Concurrent &middot; Threads &middot; Server.
+        </h3>
+        </p>
+        </h1>
+    </div>
+
+    <div class="main">
+        <!-- chapters -->
+        <div class="left">
+            <h3>Summary</h3>
+            <ol>
+                <li><a href="#Introduction" class="category">Introduction</a> </li>
+                <li>
+                    <a href="#Technologies" class="category">Technologies used</a>
+                    <ol>
+                        <li class="subcategory"><a href="#tcp">TCP</a></li>
+                        <li class="subcategory"><a href="#stl">STL</a></li>
+                        <li class="subcategory"><a href="#pugi">Pugi xml</a></li>
+                    </ol>
+                </li>
+                <li><a href="#Apparchitecture class=" class="category">App architecture</a>
+                    <ol>
+                        <li class="subcategory"><a href="#schemaclient">Client</a></li>
+                        <li class="subcategory"><a href="#schemaserver">Server</a></li>
+                    </ol>
+                </li>
+                <li><a href="#Implementation" class="category">Implementation details</a>
+                    <ol>
+                        <li class="subcategory"><a href="#implclient">Client</a>
+                            <ol>
+                                <li class="subsubcategory"><a href="#implclientbrief">Brief</a></li>
+                                <li class="subsubcategory"><a href="#implclientcomm">Communication</a> </li>
+                            </ol>
+                        </li>
+                        <li class="subcategory"><a href="#implserver">Server</a>
+                            <ol>
+                                <li class="subsubcategory"><a href="#implserverbrief">Brief</a></li>
+                                <li class="subsubcategory"><a href="#implservermain">Main loop</a></li>
+                                <li class="subsubcategory"><a href="#implservercomm">Communication</a></li>
+                                <li class="subsubcategory"><a href="#implserverdata">Data normalization</a></li>
+                                <li class="subsubcategory"><a href="#implserverfile">File loading</a></li>
+                                <li class="subsubcategory"><a href="#implserverprotocol">Protocol</a></li>
+                                <li class="subsubcategory"><a href="#implserverlog">Logging</a></li>
+                            </ol>
+                        </li>
+                        <li class="subcategory"><a href="#implboth">Both (similarities)</a>
+                            <ol>
+                                <li class="subsubcategory"><a href="#bothdata">Data transfer</a></li>
+                                <li class="subsubcategory"><a href="#bothconnection">Connection loss</a></li>
+                                <li class="subsubcategory"><a href="#bothbehaviour">Unexpected/wrong client
+                                        behaviour</a>
+                                </li>
+                            </ol>
+                        </li>
+                        <li class="subcategory"><a href="#impluses">Use cases</a>
+                            <ol>
+                                <li class="subsubcategory"><a href="#usespref">Preferred bevahiour</a>
+                                </li>
+                                <li class="subsubcategory"><a href="#cases2">New client</a></li>
+                                <li class="subsubcategory"><a href="#casesbad">Bad client</a></li>
+                            </ol>
+                        </li>
+                    </ol>
+                </li>
+                <li><a href="#Conclusions" class="category">Conclusions</a> </li>
+                <li><a href="#Bibliography" class="category">Bibliography</a> </li>
+            </ol>
+        </div>
+
+        <div class="right">
+            <!-- introduction -->
+            <div>
+                <h3 id="Introduction">Introduction</h3>
+                <p>
+                    Train manager is a command line interface application that provides users with information regarding
+                    domestic trains' timetables in Romania. The entire logic behind the application is done in the
+                    server, the clients only send commands and receive data from the server. The server provides the
+                    data used by <a href="https://www.cfrcalatori.ro/" class="externallink"> Cfr Călători</a>, cloning
+                    part of their functionality. The database inquired for this project is an <span
+                        class="code">.xml</span> file (as this is how Cfr Călători stores their data) so an <a
+                        href="#pugi" class="internallink">xml parser</a> was used. Additional information (more in depth
+                    code details) about classes, class methods and members can be found in the project's source files as
+                    Doxygen comments.
+                </p>
+            </div>
+
+            <!-- technologies -->
+            <div>
+                <h3 id="Technologies">Technologies used</h3>
+                <p>
+                    <span class="highlight" id="tcp">TCP</span> Connection oriented interaction between the server and
+                    the clients. Due to the error checking, 3 way handshaking and data retransmission, this type of
+                    connection is more reliable, but also slower. Since accuracy is arguably more important than low
+                    latency, a TCP connection was employed for all communications, rather than a faster, yet less
+                    reliable UDP one.
+                </p>
+                <p>
+                    <span class="highlight" id="stl">STL</span> The standard template library provides data structures
+                    that are a must have in all C++ projects. In this project, std::pair, std::string, std::vector,
+                    std::unordered_map, std::unordered_set were made use of.
+                </p>
+                <p>
+                    <a href="#pugibibl" class="internallink"> <span class="highlight" id="pugi">Pugixml</span></a> is
+                    the api used to parse the xml file. It provides functions that can load, traverse and modify data in
+                    the file. The internal data is stored as a tree (more exactly, a DOM-like object). Even though
+                    memory and speed improvements have been made at the cost of not validating data, it is assumed that
+                    the xml file is valid. Despite using such a rich library, only several methods are used in order to
+                    achieve the project's goal.
+                </p>
+            </div>
+
+            <!-- architecture -->
+            <div>
+                <h3 id="Apparchitecture">App architecture</h3>
+                <p id="schemaclient" class="subhighlight">Client</p>
+                <p class="arch-img">
+                    <img src="resources/client.svg" alt="Client diagram">
+                </p>
+                <p id="schemaserver" class="subhighlight">Server</p>
+                <p class="arch-img">
+                    <img src="resources/server.svg" alt="Server diagram">
+                </p>
+            </div>
+
+            <!-- implementation -->
+            <div>
+                <h3 id="Implementation">Implementation details</h3>
+                <ol>
+                    <li id="implclient" class="subhighlight">Client</li>
+                    <p>
+                        <span id="implclientbrief" class="highlight">Brief </span> The client side of the application is
+                        relatively straight forward: once a connection to the server is established, the client is free
+                        to receive and send messages until they quit, unexpectedly close the application or lose the
+                        connection to the server. The first function that is called in the client is <span
+                            class="code">makeConnection()</span>, a function will attempt several times to establish a
+                        connection and that throws if unable to connect.
+                    </p>
+                    <p>
+                    <div class="code">
+                        <span class="hide"><a href="../Client/src/connection.cpp"
+                                class="externallink">Client/src/connection.cpp</a></span>
+                        <span class="code">
+                            void Connection::makeConnection() <br>
+                            {<br>
+                            <a class="tab"></a>if ((serverFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>throw ConnectionException("Socket creation error"); <br>
+                                <br>
+                                <a class="tab"></a>serv_addr.sin_family = AF_INET; <br>
+                                <a class="tab"></a>serv_addr.sin_port = htons(PORT); <br> <br>
+                                <a class="tab"></a>if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) <br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>throw ConnectionException("IPv4 address conversion error");
+                                    <br> <br>
+                                    <a class="tab"></a>const unsigned RETRY_ATTEMPTS = 5, TIME = 1; <br>
+
+                                    <a class="tab"></a>LoadingBar bar(RETRY_ATTEMPTS, TIME); <br>
+
+                                    <a class="tab"></a>for (unsigned i = 0; i < RETRY_ATTEMPTS; i++) <br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>if (connect(serverFD, (struct sockaddr *)&serv_addr,
+                                        sizeof(serv_addr)) < 0) <br>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>{ <br>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>char buf[64]; <br>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>unsigned seconds=TIME + i * 2; <br>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>sprintf(buf, "%u/%u Connection failed, retrying in
+                                            %u seconds" , i
+                                            + 1, RETRY_ATTEMPTS, seconds); <br>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>
+                                            <a class="tab"></a>std::cout << buf << std::flush; <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>bar.update(seconds); <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>} <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>else <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>{ <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>connected=true; <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>return; <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>} <br>
+                                                }
+                        </span>
+                    </div>
+                    </p>
+                    <p>
+                        <span id="implclientcomm" class="highlight">Communication </span>After connecting to the server,
+                        two threads are created: a reader and a sender that allow for continuous and uninterrupted data
+                        transfer. Since the data is plaintext, it can be easily printed. The send thread reads the
+                        client input line by line, while the read thread reads data from the server by calling two
+                        helper functions: <span class="code"> allocateReader()</span> and <span class="code">
+                            split()</span> that extract the data, separating it from the byte size and padding (see <a
+                            href="#datatransfer" class="internallink"> Data transfer</a>).
+                    </p>
+                    <li id="implserver" class="subhighlight">Server</li>
+                    <p>
+                        <span id="implserverbrief" class="highlight">Brief</span> The server side of the application is
+                        more complex because it manages connections with multiple clients at a time and executes their
+                        commands while also avoiding race conditions. Similar to the client, the first method called is
+                        <span class="code"> makeConnection()</span>, a function that throws if unable to connect.
+                    </p>
+
+                    <div class="code">
+                        <span class="hide"><a href="../Server/src/connection.cpp"
+                                class="externallink">Server/src/connection.cpp</a></span>
+                        <span class="code">
+                            void Connection::makeConnection() <br>
+                            { <br>
+                            <a class="tab"></a>int optVal = 1; <br>
+                            <br>
+                            <a class="tab"></a>if ((socketFD = socket(AF_INET, SOCK_STREAM, 0)) == 0) <br>
+                            <a class="tab"></a><a class="tab"></a>throw ConnectionException("Socket creation error");
+                            <br>
+                            <a class="tab"></a>if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &optVal,
+                            sizeof(optVal)))
+                            <br>
+                            <a class="tab"></a><a class="tab"></a><a class="tab"></a>throw ConnectionException("Could
+                            not attach socket to port
+                            (setsockopt)");
+                            <br>
+                            <br>
+                            <a class="tab"></a>address.sin_family = AF_INET; <br>
+                            <a class="tab"></a>address.sin_addr.s_addr = INADDR_ANY; <br>
+                            <a class="tab"></a>address.sin_port = htons(PORT); <br>
+                            <br>
+                            <a class="tab"></a>if (bind(socketFD, (struct sockaddr *)&address, sizeof(address)) < 0)
+                                <br>
+                                <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not attach socket
+                                to port
+                                (bind)");
+                                <br>
+                                <a class="tab"></a>if(listen(socketFD, 3) < 0) <br>
+                                    <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not listen
+                                    from the server!");
+                                    <br>
+                                    }
+                        </span>
+                    </div>
+                    <p>
+                        <span id="implservermain" class="highlight">Main loop</span> After establishing the connection,
+                        the server's main loop accepts clients, sends them the message of the day and stores them into
+                        an unordered map. This thread is equivalent to the main thread, upon finishing its execution
+                        (which may only occur in the case of an uncaught exception) it closes the server (realistically
+                        this will never happen). The server will (currently) only send data when requested, an
+                        announcement system that broadcasts a message will soon be implemented. For each client the
+                        <span class="code">runIndividual()</span> method is called that creates a reader thread, while
+                        the main thread will delete the client entry in the unordered map upon disconnection (see <a
+                            href="#conenctionloss" class="internallink"> Connection loss</a>).
+                    </p>
+                    <p>
+                        <span id="implservercomm" class="highlight">Communication</span> Sending and reading data is the
+                        same as on the client side (see <a href="#datatransfer" class="internallink"> Data
+                            transfer</a>), except that the client input is also parsed. This input is tokenized,
+                        validated in order to check if the requested action is supported and if the argument count is
+                        correct, normalized and finally executed.
+                    </p>
+                    <p>
+                        <span id="implserverdata" class="highlight">Data normalization</span> All client input and
+                        station names inside the xml file are normalized which means that all words have only their
+                        first letter capitalized and diacritics are replaced by their non-diacritics equivalent (e.g.
+                        ”ă”, ”â” become ”a”). In addition, close matches to city names are supported (by using <a
+                            href="https://en.wikipedia.org/wiki/Levenshtein_distance" class="externallink">Levenshtein
+                            distance</a>) and partial names are valid too. For example, "cluj" will find the train
+                        station "cluj napoca" and "iaai" will find "iasi".
+                    </p>
+                    <p>
+                        <span id="implserverfile" class="highlight">File loading</span> When started, the server will
+                        call the <span class="code">getFile()</span> method that will load the locally saved xml file
+                        (if it exists). Upon failure (file could not be found), it will attempt to download the file
+                        from a <a
+                            href="https://data.gov.ro/dataset/c4f71dbb-de39-49b2-b697-5b60a5f299a2/resource/5af0366b-f9cb-4d6e-991b-e91789fc7d2c/download/sntfc-cfr-cltori-s.a.-1232-trenuri_2021.xml"
+                            class="externallink">public source</a> (not shown in the code example). This operation is
+                        thread safe and will always succeed to load the file (except if the source is down, which is
+                        unlikely).
+                    </p>
+                    <div class="code">
+                        <span class="hide"><a href="../Server/src/connection.cpp"
+                                class="externallink">Server/src/connection.cpp</a></span>
+                        <span class="code">
+                            void Command::getFile() <br>
+                            { <br>
+                            <a class="tab"></a>const std::string localPath = "resources/cfr_2021.xml"; <br>
+                            <a class="tab"></a>const std::string web = "..."; <br>
+                            <a class="tab"></a>const std::string args = "--tries=3 -O " + localPath; <br>
+
+                            <a class="tab"></a>if (!std::filesystem::exists(localPath)) <br>
+                            <a class="tab"></a>{ <br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>std::mutex m; <br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>m.lock(); <br>
+                            <br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>LOG_DEBUG("Xml does not exist locally, attempting to download");<br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>if (system(("wget " + web + args).c_str()) < 0) <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>
+                                <a class="tab"></a>LOG_DEBUG("Xml failed to download"); <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>else<br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>
+                                <a class="tab"></a>LOG_DEBUG("Xml downloaded"); <br>
+
+                                <a class="tab"></a>
+                                <a class="tab"></a>m.unlock(); <br>
+                                <a class="tab"></a>} <br>
+                                <a class="tab"></a>if (!doc.empty()) <br>
+                                <a class="tab"></a>{ <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>LOG_DEBUG("Loaded xml"); <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>doc.load_file(localPath.c_str()); <br>
+                                <a class="tab"></a>} <br>
+                                }
+                        </span>
+                    </div>
+                    <p>
+                        <span id="implserverprotocol" class="highlight">Protocol</span>
+                        Commands may have a fixed or a flexible number of arguments (or optional). As of yet, the only
+                        supported commands are "today", a command that prints the arrival and destination times of
+                        trains in given stations, "departures" and "arrivals" that return the trains that depart or
+                        arrive in the given stations in the upcoming delta time. The "today" command first prints a
+                        verbose result (all intermediary stations and time stamps) and a brief one (only start and
+                        destination stations with their respective time stamps) that is omitted if there are no
+                        intermediary stations (see <a href="#impluses" class="internallink">Use cases</a>). The
+                        "departures" and "arrivals" commands function and return a similar output: all trains leaving
+                        from or coming to a given station in the upcoming delta minutes (less than a day).
+                    </p>
+                    <p>
+                        <span id="implserverlog" class="highlight">Logging</span> Client to server and server to client
+                        messages are logged, as well as debug related information such as: clients being accepted,
+                        disconnects and unexpected behaviour caused by the user. The logging data is stored in plain
+                        text and is deleted every time the server is restarted in order to keep fresh data and ignore
+                        past and unwanted information.
+                    </p>
+                    <li id="implboth" class="subhighlight">Both (similarities)</li>
+                    <p>
+                        <span id="bothdata" class="highlight" id="datatransfer">Data transfer</span> In order to
+                        efficiently send and read data, messages coming from both the client and server use the format
+                        <span class="code">[byte_size][padding][message]</span>, such that upon sending, the reader is
+                        able to allocate a buffer with the exact size of data to be received. As far as data types are
+                        concerned, <span class="code">byte_size</span> is <span class="code">size_t</span>, <span
+                            class="code">padding</span> and <span class="code">message</span> are C-style character
+                        arrays (<span class="code"> char *</span>). An initial buffer is first used to read at least the
+                        first part of the message (<span class="code">[byte_size][padding]</span>), after which, if
+                        needed (message length is longer than the size of the initial buffer, most common case), the
+                        read function will be called again. Example of sender and reader allocation: <br>
+                    </p>
+
+                    <div class="code">
+                        <span class="hide"><a href="../Server/src/iomanager.cpp"
+                                class="externallink">Server/src/iomanager.cpp</a></span>
+                        <span class="code">
+                            std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)<br>
+                                { <br>
+                                <a class="tab"></a>const size_t bytes = str.size() * sizeof(str[0]) + 1; <br>
+                                <a class="tab"></a>const size_t dataSize = bytes + strlen(PADDING) + 12; <br>
+                                <a class="tab"></a>char *allocated = new char[dataSize]{}; <br>
+                                <a class="tab"></a>snprintf(allocated, dataSize, "\%lu\%s\%s", bytes,
+                                PADDING,str.c_str());
+                                <br>
+                                <a class="tab"></a>return {allocated, dataSize};<br>
+                                }
+                        </span>
+                    </div>
+                    <p></p>
+                    <div class="code">
+                        <span class="hide"><a href="../Server/src/iomanager.cpp"
+                                class="externallink">Server/src/iomanager.cpp</a></span>
+                        <span class="code">
+                            std::pair<char *, size_t> IOManager::allocateReader(const char *buff)<br>
+                                { <br>
+                                <a class="tab"></a>auto [msg, size] = split(buff); <br>
+                                <a class="tab"></a>char *wholeMessage = new char[size]{}; <br>
+                                <a class="tab"></a>strcpy(wholeMessage, msg); <br>
+                                <br>
+                                <a class="tab"></a>return {wholeMessage, size};<br>
+                                }<br>
+                                std::pair<const char *, size_t> IOManager::split(const char *str) <br>
+                                    { <br>
+                                    <a class="tab"></a>const char *paddingStart = strstr(str, PADDING);<br>
+                                    <a class="tab"></a>if (paddingStart == nullptr)<br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>throw std::runtime_error("Padding not found");<br>
+                                    <br>
+                                    <a class="tab"></a>char length[BUFF_SIZE + 1]{};<br>
+                                    <a class="tab"></a>for (int i = 0; i < paddingStart - str; i++)<br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>length[i] = str[i];<br>
+                                        <br>
+                                        <a class="tab"></a>return {paddingStart + strlen(PADDING),
+                                        atoi(length)};<br>
+                                        }
+                        </span>
+                    </div>
+                    <p>
+                        The purpose of the padding is only to differentiate the message size from the actual message and
+                        is composed of distinctive characters. All read/send operations are wrapped by functions in the
+                        IOManager class.
+                    </p>
+                    <p>
+                        <span class="highlight" id="bothconnection">Connection loss</span> Read and send operations
+                        check if the buffer received or sent match their size. In the eventuality that the sizes are
+                        different, an exception is thrown, however, if the value returned by the system <span
+                            class="code">read()</span> or <span class="code">write()</span> corresponds to an error, the
+                        connection is closed, assuming that the client or server has abruptly disconnected. <br> In case
+                        the client loses connection, the server will be unaffected, and able to accept other (including
+                        the same) clients. If the server shuts down, all clients' connections will be closed as no more
+                        data can be received. The <span class="code">read()</span> and <span class="code">write()</span>
+                        IOManager methods toggle the <span class="code">isConnected</span> client member variable if the
+                        connection is lost, thus the <span class="code">runIndividual()</span> method can efficiently
+                        remove the client from the clients map.
+                    </p>
+
+                    <div class="code">
+                        <span class="hide"><a href="../Server/src/connection.cpp"
+                                class="externallink">Server/src/connection.cpp</a></span>
+                        <span class="code">
+                            void Connection::runIndividual(Client *client) <br>
+                            { <br>
+                            <a class="tab"></a>std::thread reader(readIndividual, client); <br>
+                            <a class="tab"></a>reader.join(); <br>
+                            <br>
+                            <a class="tab"></a>if (!client->isConnected) <br>
+                            <a class="tab"></a>{ <br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>clients.erase(client->sock); <br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>LOG_DEBUG("Client erased"); <br>
+                            <a class="tab"></a>} <br>
+                            }
+                        </span>
+                    </div>
+                    <p>
+                        <span id="bothbehaviour" class="highlight">Unexpected/wrong client behaviour</span> Commands
+                        that generate an empty output are not signaled in any way, nor is the client warned about this,
+                        they are simply sent an empty string. Upon issuing a nonexistent command or a command with a
+                        wrong number of arguments, the client will be advised on its proper usage.
+                    </p>
+                    <li id="impluses" class="subhighlight">Use cases</li>
+                    <p>
+                        The server is started. Multiple client connections are made. The following scenarios can be
+                        assumed (non-essential data is omitted by "[...]"):
+                    <ul>
+                        <li><span id="usespref" class="highlight">Preferred behaviour</span> the client tries to (and
+                            knows how to) get information about two trains: </li>
+                        <div class="code">
+                            <span class="hide">Terminal output</span>
+                            <span class="code">
+                                $ bin/main <br>
+                                ---Welcome to Train Manager--- <br>
+                                Today is 25/12/2021(Saturday) <br>
+                                today iasi bucuresti <br>
+                                Found 5 trains: <br>
+                                1. IR1660 <br>
+                                (06:20 -> 06:24, 04 min) Iaşi -> Nicolina <br>
+                                (06:25 -> 06:31, 06 min) Nicolina -> Ciurea Hm. <br>
+                                (06:31 -> 06:44, 13 min) Ciurea Hm. -> Bârnova Hm. <br>
+                                [...] <br>
+                                (12:40 -> 12:43, 03 min) P. mac. R1 Buciumeni -> Chitila <br>
+                                (12:43 -> 12:54, 11 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                <br>
+                                2. IR1662 <br>
+                                (14:15 -> 14:19, 04 min) Iaşi -> Nicolina <br>
+                                (14:21 -> 14:27, 06 min) Nicolina -> Ciurea Hm. <br>
+                                (14:27 -> 14:40, 13 min) Ciurea Hm. -> Bârnova Hm. <br>
+                                [...] <br>
+                                (20:35 -> 20:37, 02 min) P. mac. R1 Buciumeni -> Chitila <br>
+                                (20:37 -> 20:47, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                <br>
+                                3. IR1664 <br>
+                                (15:58 -> 16:02, 04 min) Iaşi -> Nicolina <br>
+                                [...] <br>
+                                (22:07 -> 22:17, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                <br>
+                                4. IR1854-1 <br>
+                                (23:13 -> 23:27, 14 min) Iaşi -> Leţcani <br>
+                                [...] <br>
+                                (06:08 -> 06:20, 12 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                <br>
+                                5. IR-N1668 <br>
+                                (23:15 -> 23:19, 04 min) Iaşi -> Nicolina <br>
+                                [...] <br>
+                                (05:45 -> 05:55, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                <br>
+                                At a glance (2/5 trains available) <br>
+                                Number Depart Arrival Time <br>
+                                [x] 1. IR1660 (06:20 -> 12:54, 06:34) Iaşi -> Bucureşti Nord Gr.A <br>
+                                [x] 2. IR1662 (14:15 -> 20:47, 06:32) Iaşi -> Bucureşti Nord Gr.A <br>
+                                [x] 3. IR1664 (15:58 -> 22:17, 06:19) Iaşi -> Bucureşti Nord Gr.A <br>
+                                ---------- <br>
+                                [o] 4. IR1854-1 (23:13 -> 06:20, 07:07 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
+                                [o] 5. IR-N1668 (23:15 -> 05:55, 06:40 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
+                                <br>
+                                today cluj napoca suceava <br>
+                                Found 4 trains: <br>
+                                1. IR-N1838-1 <br>
+                                (01:07 -> 01:15, 08 min) Cluj Napoca Est -> Cluj Napoca <br>
+                                (01:27 -> 01:35, 08 min) Cluj Napoca -> Cluj Napoca Est <br>
+                                (01:35 -> 01:41, 06 min) Cluj Napoca Est -> Apahida <br>
+                                [...] <br>
+                                (07:47 -> 07:53, 06 min) Ciprian Porumbescu Hm. -> Stroieşti <br>
+                                (07:53 -> 08:01, 08 min) Stroieşti -> Suceava Vest <br>
+                                <br>
+                                2. IR1832 <br>
+                                (09:34 -> 09:42, 08 min) Cluj Napoca -> Cluj Napoca Est <br>
+                                (09:42 -> 09:48, 06 min) Cluj Napoca Est -> Apahida <br>
+                                (09:48 -> 09:50, 02 min) Apahida -> Ram. Cojocna <br>
+                                [...] <br>
+                                (16:02 -> 16:08, 06 min) Ciprian Porumbescu Hm. -> Stroieşti <br>
+                                (16:08 -> 16:16, 08 min) Stroieşti -> Suceava Vest <br>
+                                <br>
+                                3. IR1834-1 <br>
+                                (12:58 -> 13:06, 08 min) Cluj Napoca -> Cluj Napoca Est <br>
+                                [...] <br>
+                                (19:35 -> 19:43, 08 min) Stroieşti -> Suceava Vest <br>
+                                <br>
+                                4. IR-N1766-1 <br>
+                                (22:03 -> 22:11, 08 min) Cluj Napoca Est -> Cluj Napoca <br>
+                                [...] <br>
+                                (04:58 -> 05:06, 08 min) Stroieşti -> Suceava Vest <br>
+                                <br>
+                                At a glance (1/4 trains available) <br>
+                                Number Depart Arrival Time <br>
+                                [x] 1. IR-N1838-1 (01:07 -> 08:01, 06:54) Cluj Napoca Est -> Suceava Vest <br>
+                                [x] 2. IR1832 (09:34 -> 16:16, 06:42) Cluj Napoca -> Suceava Vest <br>
+                                [x] 3. IR1834-1 (12:58 -> 19:43, 06:45) Cluj Napoca -> Suceava Vest <br>
+                                ---------- <br>
+                                [o] 4. IR-N1766-1 (22:03 -> 05:06, 07:03 +1day) Cluj Napoca Est -> Suceava Vest <br>
+                            </span>
+                        </div>
+                        <li><span id="cases2" class="highlight">New client</span> The unexperienced client has no idea
+                            how
+                            to
+                            use
+                            the system:
+                        </li>
+                        <div class="code">
+                            <span class="hide">Terminal output</span>
+                            <span class="code">
+                                ---Welcome to Train Manager--- <br>
+                                Today is 25/12/2021(Saturday) <br>
+                                today <br>
+                                Command today has 2 mandatory arguments, 0 provided <br>
+                                help <br>
+                                Supported commands: <br>
+                                today [start] [dest] (get today's trains schedules from [start] to [dest]) <br>
+                                departures [start] [delta] (get the departures from [start] [...]) <br>
+                                arrivals [dest] [delta] (get the arrivals to [dest] [...] <br>
+                                quit (close the connection) <br>
+                                help [command] (get more detailed help about a command) <br>
+                                today brasov <br>
+                                Command today has 2 mandatory arguments, 1 provided <br>
+                                depart <br>
+                                Command depart not found <br>
+                            </span>
+                        </div>
+                        <li>
+                            <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find
+                            exploits: By
+                            entering a command longer than the available buffer (of constant size) the command will be
+                            invalidated and the connection will be closed. Entering new lines will or random unicode
+                            characters will do nothing. Entering EOF will cause the client to no longer be able to send
+                            commands. Thus, the server will not crash due to user input.
+                        </li>
+                    </ul>
+                    </p>
+                </ol>
+            </div>
+
+            <!-- conclusions -->
+            <div>
+                <h3 id="Conclusions">Conclusions</h3>
+                <p>
+                    This application can be used to accurately tell the domestic timetable of trains in Romania, cloning
+                    part of Cfr Călători's functionality. Improvement ideas:
+                <ul>
+                    <li>
+                        Code related/server only
+                        <ul>
+                            <li>fix a bug where read/send operations have to check for empty strings (not fatal, just
+                                annoying to have to always consider this)</li>
+                            <li>fewer hardcoded variables</li>
+                            <li>delays will be reset the upcoming day</li>
+                            <li>broadcast feature for the server, maybe also server only commands</li>
+                            <li>efficiency: cache the results for sub-linear searches</li>
+                            <li>automatically download the latest data</li>
+                        </ul>
+                    </li>
+                    <li>
+                        User convenience/client only
+                        <ul>
+                            <li>more commands: search by train number or type</li>
+                            <li>make the client application cross platform</li>
+                        </ul>
+                    </li>
+                    <li>Others</li>
+                </ul>
+                </p>
+            </div>
+
+            <!-- bibliography -->
+            <div>
+                <h3 id="Bibliography">Bibliography</h3>
+                <p>
+                    This project could not be finalized without the help of:
+                <ul>
+                    <li>Tutorials from Geeks for Geeks</li>
+                    <ul>
+                        <li><a href="https://www.geeksforgeeks.org/socket-programming-cc/" class="externallink">
+                                https://www.geeksforgeeks.org/socket-programming-cc/</a></li>
+                        <li><a href="https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/"
+                                class="externallink">
+                                https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/</a></li>
+                    </ul>
+                    <li><span id="pugibibl">Arseny Kapoulkine's xml parser</span></li>
+                    <ul>
+                        <li><a href="https://github.com/zeux/pugixml" class="externallink">
+                                https://github.com/zeux/pugixml
+                            </a>
+                        </li>
+                        <li><a href="https://pugixml.org/" class="externallink"> https://pugixml.org/ </a></li>
+                    </ul>
+                </ul>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+
+<style>
+    .main {
+        display: flex;
+        overflow: auto;
+        flex-direction: row;
+        flex-wrap: nowrap;
+    }
+
+    .left {
+        position: sticky;
+        position: -webkit-sticky;
+        top: 0;
+        align-self: flex-start;
+        margin-right: 10px;
+        border-right: 2px solid gray;
+    }
+
+    @media (max-width: 1000px) {
+        .main {
+            flex-direction: column;
+        }
+
+        .left {
+            border: none;
+        }
+    }
+
+    html {
+        padding: 0;
+        margin: 0 10px;
+        scroll-behavior: smooth;
+        text-align: justify;
+    }
+
+    .title,
+    .subtitle {
+        text-align: center;
+        padding: 0% 20%;
+    }
+
+    h3 {
+        font-family: Arial, Helvetica, sans-serif;
+    }
+
+    h1 p,
+    h3 p {
+        padding: 0;
+        margin: 0;
+        font-weight: 300;
+    }
+
+    .highlight {
+        font-weight: 700;
+        font-style: italic;
+    }
+
+    .subhighlight {
+        font-family: 'Segoe UI', Tahoma, 'Geneva', Verdana, sans-serif;
+        font-size: large;
+    }
+
+    a {
+        text-decoration: none;
+        color: hsl(266, 79%, 39%);
+    }
+
+    .internallink {
+        color: rgb(192, 0, 0);
+        transition: 250ms;
+    }
+
+    .externallink {
+        color: rgb(0, 192, 192);
+        transition: 250ms;
+    }
+
+    a:hover {
+        background-color: rgb(224, 224, 224);
+        border-radius: 5px;
+        border-width: 10px;
+        transition: all 250ms ease-in;
+    }
+
+    .arch-img {
+        text-align: left;
+    }
+
+    img {
+        width: 40%;
+        padding: 0 30%;
+        text-align: center;
+    }
+
+    li .category {
+        font-size: larger;
+    }
+
+    li .subcategory {
+        font-size: large;
+        list-style-type: lower-latin;
+    }
+
+    li .subsubcategory {
+        font-size: medium;
+        list-style-type: lower-roman;
+    }
+
+    .code {
+        background-color: rgb(224, 224, 224);
+        position: relative;
+        width: fit-content;
+        font-family: 'Courier New', Courier, monospace;
+        border-radius: 3px;
+    }
+
+    .hide {
+        float: right;
+        position: relative;
+        font-weight: 600;
+        transition: opacity 150ms;
+        opacity: 0%;
+    }
+
+    div:hover>.hide {
+        opacity: 100%;
+        transition: opacity 150ms;
+    }
+
+    @media (max-width: 1000px) {
+        img {
+            width: 70%;
+            padding: 0 15%;
+        }
+
+        html {
+            margin: 50px;
+        }
+    }
+
+    .tab {
+        margin-left: 40px;
+    }
+
+    @media (max-width: 600px) {
+        img {
+            width: 90%;
+            padding: 0 5%;
+        }
+
+        html {
+            margin: 30px
+        }
+    }
+</style>
+
+</html>
