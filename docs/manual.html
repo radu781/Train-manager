@@ -158,7 +158,7 @@
                     <p>
                     <div class="code">
                         <span class="hide"><a href="../Client/src/connection.cpp"
-                                class="externallink">Client/src/connection.cpp</a></span>
+                                class="filelink">Client/src/connection.cpp</a></span>
                         <span class="code">
                             void Connection::makeConnection() <br>
                             {<br>
@@ -187,7 +187,7 @@
                                             <a class="tab"></a>char buf[64]; <br>
                                             <a class="tab"></a>
                                             <a class="tab"></a>
-                                            <a class="tab"></a>unsigned seconds=TIME + i * 2; <br>
+                                            <a class="tab"></a>unsigned seconds = TIME + i * 2; <br>
                                             <a class="tab"></a>
                                             <a class="tab"></a>
                                             <a class="tab"></a>sprintf(buf, "%u/%u Connection failed, retrying in
@@ -207,12 +207,14 @@
                                                 <a class="tab"></a>{ <br>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>
-                                                <a class="tab"></a>connected=true; <br>
+                                                <a class="tab"></a>connected = true; <br>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>return; <br>
                                                 <a class="tab"></a>
-                                                <a class="tab"></a>} <br>
+                                                <a class="tab"></a>} <br><br>
+                                                <a class="tab"></a>throw ConnectionException("Server connection
+                                                error");<br>
                                                 }
                         </span>
                     </div>
@@ -236,7 +238,7 @@
 
                     <div class="code">
                         <span class="hide"><a href="../Server/src/connection.cpp"
-                                class="externallink">Server/src/connection.cpp</a></span>
+                                class="filelink">Server/src/connection.cpp</a></span>
                         <span class="code">
                             void Connection::makeConnection() <br>
                             { <br>
@@ -290,26 +292,30 @@
                     </p>
                     <p>
                         <span id="implserverdata" class="highlight">Data normalization</span> All client input and
-                        station names inside the xml file are normalized which means that all words have only their
-                        first letter capitalized and diacritics are replaced by their non-diacritics equivalent (e.g.
-                        ”ă”, ”â” become ”a”). In addition, close matches to city names are supported (by using <a
+                        replaced by their non-diacritics equivalent (e.g. ”ă”, ”â” become ”a”). In addition, functions
+                        that find station names also accept partial and close matches (by using <a
                             href="https://en.wikipedia.org/wiki/Levenshtein_distance" class="externallink">Levenshtein
-                            distance</a>) and partial names are valid too. For example, "cluj" will find the train
-                        station "cluj napoca" and "iaai" will find "iasi".
+                            distance</a>), however exact matches are prioritised. Find functions return multiple match
+                        values like a real life search bar. For example, "cluj" will find the train stations "cluj
+                        napoca", "cluj napoca est" and "iaai" will
+                        find "iasi".
                     </p>
                     <p>
                         <span id="implserverfile" class="highlight">File loading</span> When started, the server will
                         call the <span class="code">getFile()</span> method that will load the locally saved xml file
-                        (if it exists). Upon failure (file could not be found), it will attempt to download the file
-                        from a <a
+                        (if it exists). Upon failure (file could
+                        not be found), it will attempt to download the file (using the utilitary <span
+                            class="code">wget</span>) from a <a
                             href="https://data.gov.ro/dataset/c4f71dbb-de39-49b2-b697-5b60a5f299a2/resource/5af0366b-f9cb-4d6e-991b-e91789fc7d2c/download/sntfc-cfr-cltori-s.a.-1232-trenuri_2021.xml"
-                            class="externallink">public source</a> (not shown in the code example). This operation is
-                        thread safe and will always succeed to load the file (except if the source is down, which is
-                        unlikely).
+                            class="externallink">public source</a> (not shown in the code example). In addition to
+                        loading the file, this function will also store the station names and train numbers in member
+                        variables in order for them to be validated faster
+                        (not shown here). This operation is thread safe and will always succeed to load the file (except
+                        if the source is down, which is unlikely).
                     </p>
                     <div class="code">
                         <span class="hide"><a href="../Server/src/connection.cpp"
-                                class="externallink">Server/src/connection.cpp</a></span>
+                                class="filelink">Server/src/connection.cpp</a></span>
                         <span class="code">
                             void Command::getFile() <br>
                             { <br>
@@ -320,54 +326,134 @@
                             <a class="tab"></a>if (!std::filesystem::exists(localPath)) <br>
                             <a class="tab"></a>{ <br>
                             <a class="tab"></a>
-                            <a class="tab"></a>std::mutex m; <br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>m.lock(); <br>
-                            <br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>LOG_DEBUG("Xml does not exist locally, attempting to download");<br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>if (system(("wget " + web + args).c_str()) < 0) <br>
+                            <a class="tab"></a>std::lock_guard<std::mutex> lock(m); <br>
+                                <br>
                                 <a class="tab"></a>
+                                <a class="tab"></a>LOG_DEBUG("Xml does not exist locally, attempting to download");<br>
                                 <a class="tab"></a>
-                                <a class="tab"></a>LOG_DEBUG("Xml failed to download"); <br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>else<br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>
-                                <a class="tab"></a>LOG_DEBUG("Xml downloaded"); <br>
+                                <a class="tab"></a>if (system(("wget " + web + args).c_str()) < 0) <br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>LOG_DEBUG("Xml failed to download"); <br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>else<br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>LOG_DEBUG("Xml downloaded"); <br>
 
-                                <a class="tab"></a>
-                                <a class="tab"></a>m.unlock(); <br>
-                                <a class="tab"></a>} <br>
-                                <a class="tab"></a>if (!doc.empty()) <br>
-                                <a class="tab"></a>{ <br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>LOG_DEBUG("Loaded xml"); <br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>doc.load_file(localPath.c_str()); <br>
-                                <a class="tab"></a>} <br>
-                                }
+                                    <a class="tab"></a>} <br>
+                                    <a class="tab"></a>if (!doc.empty()) <br>
+                                    <a class="tab"></a>{ <br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>LOG_DEBUG("Loaded xml"); <br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>doc.load_file(localPath.c_str()); <br>
+                                    <a class="tab"></a>} <br>
+                                    }
                         </span>
                     </div>
                     <p>
-                        <span id="implserverprotocol" class="highlight">Protocol</span>
-                        Commands may have a fixed or a flexible number of arguments (or optional). As of yet, the only
-                        supported commands are "today", a command that prints the arrival and destination times of
-                        trains in given stations, "departures" and "arrivals" that return the trains that depart or
-                        arrive in the given stations in the upcoming delta time. The "today" command first prints a
-                        verbose result (all intermediary stations and time stamps) and a brief one (only start and
-                        destination stations with their respective time stamps) that is omitted if there are no
-                        intermediary stations (see <a href="#impluses" class="internallink">Use cases</a>). The
-                        "departures" and "arrivals" commands function and return a similar output: all trains leaving
-                        from or coming to a given station in the upcoming delta minutes (less than a day).
+                        <span id="implserverprotocol" class="highlight">Protocol</span> Commands may have a fixed or a
+                        flexible number of arguments (or optional). As of yet, the supported commands are:
+                    <table>
+                        <th class="slim">Command name</th>
+                        <th class="slim">Mandatory args<sup><a href="#args" class="internallink">1</a></sup></th>
+                        <th class="slim">Optional args<sup><a href="#args" class="internallink">1</a></sup></th>
+                        <th class="wide">Effect</th>
+
+                        <tr>
+                            <td><span class="code">today</span></td>
+                            <td class="digit">2<br>(city names)</td>
+                            <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
+                            </td>
+                            <td>prints the arrival and destination times of trains in given stations<br>it first prints
+                                a verbose result (all intermediary stations and time stamps) and a brief one (only start
+                                and destination stations with their respective
+                                time stamps) that is omitted if there are no intermediary stations (see
+                                <a href="#impluses" class="internallink">Use cases</a>)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">departures</span></td>
+                            <td class="digit">2<br>(city name, delta<sup><b><a href="#protocoldelta"
+                                            class="internallink">3</a></b></sup>)</td>
+                            <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
+                            </td>
+                            <td>prints the trains that depart from the given station in the upcoming delta<sup><b><a
+                                            href="#protocoldelta" class="internallink">3</a></b></sup> time
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">arrivals</span></td>
+                            <td class="digit">2<br>(city name, delta<sup><b><a href="#protocoldelta"
+                                            class="internallink">3</a></b></sup>)</td>
+                            <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
+                            </td>
+                            <td>prints the trains that arrive at the given station in the upcoming delta<sup><b><a
+                                            href="#protocoldelta" class="internallink">3</a></b></sup> time
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">late</span></td>
+                            <td class="digit">2<br>(city name, delta<sup><b><a href="#protocoldelta"
+                                            class="internallink">3</a></b></sup>)</td>
+                            <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
+                            </td>
+                            <td>proposes a delay for a given train, future calls to <span class="code">today</span>,
+                                <span class="code">departures</span> and <span class="code">arrivals</span> will be
+                                altered
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">help</span></td>
+                            <td class="digit">0</td>
+                            <td class="digit">1<br>(specific command)</td>
+                            <td>prints general help information or specific to a command</td>
+                        </tr>
+                        <tr>
+                            <td><span class="code">quit</span></td>
+                            <td class="digit">0</td>
+                            <td class="digit">0</td>
+                            <td>shuts down the client connection, this command doesn't reach the server</td>
+                        </tr>
+
+                    </table>
+                    <p>
+                        <sup id="args"><b>1</b></sup>An argument is a word separated by at least one space character.
+                        <br>
+                        <sup id="protocolany"><b>2</b></sup>City names can be longer than a single word, however partial
+                        matches will return more results.<br>
+                        <sup id="protocoldelta"><b>3</b></sup>Delta can be either a number or a literal. If it's only
+                        formed by digits, those are interpreted as seconds. Otherwise, the literal is evaluated: <span
+                            class="code">s</span> represents seconds,
+                        <span class="code">m</span> represents minutes and <span class="code">h</span> represents hours.
+                        The digits before these characters are added up by category. For example: "1000" and "1000s"
+                        translate to a delta of 1000 seconds,
+                        "10m" is 10 minutes, "15m45s" is 15 minutes and 45 seconds, "10m2s25m" is 35 minutes and 2
+                        seconds.
+                    </p>
+                    <p>
+                        All commands (apart from <span class="code">help</span> and <span class="code">quit</span>) have
+                        to search for the user inputted station or train name. These names are cached when the server
+                        starts (and <span class="code">getFile()</span> is called, see <a href="#implserverfile"
+                            class="internallink">File loading</a>). In case of total mismatch (no exact, partial or
+                        close matches are found) the functions are considerably faster, having to only iterate over
+                        &approx;
+                        1500 unique station names or &approx; 1200 unique train names instead of the whole xml
+                        (&approx;30.000 stations and &approx; 1200 trains). Of course, this adds unnecessary checks even
+                        though the station names might be correct,
+                        but this is only equal to <sup>1</sup>/<sub>20</sub> of the time to actually find the stations.
+                    </p>
                     </p>
                     <p>
                         <span id="implserverlog" class="highlight">Logging</span> Client to server and server to client
                         messages are logged, as well as debug related information such as: clients being accepted,
-                        disconnects and unexpected behaviour caused by the user. The logging data is stored in plain
-                        text and is deleted every time the server is restarted in order to keep fresh data and ignore
-                        past and unwanted information.
+                        restarted in order to keep fresh data and ignore past and unwanted information. Logging is
+                        thread safe and (purposefully) slow in order
+                        to log everything in case of crashes. Logging can be disabled by removing compile time defines (
+                        <span class="code">ENABLE_COMM_LOGGING</span> <span class="code">ENABLE_DEBG_LOGGING</span> in
+                        the server's root
+                        <a href="../Server/Makefile" class="filelink">Makefile</a>).
                     </p>
                     <li id="implboth" class="subhighlight">Both (similarities)</li>
                     <p>
@@ -377,7 +463,7 @@
                         able to allocate a buffer with the exact size of data to be received. As far as data types are
                         concerned, <span class="code">byte_size</span> is <span class="code">size_t</span>, <span
                             class="code">padding</span> and <span class="code">message</span> are C-style character
-                        arrays (<span class="code"> char *</span>). An initial buffer is first used to read at least the
+                        arrays (<span class="code">char *</span>). An initial buffer is first used to read at least the
                         first part of the message (<span class="code">[byte_size][padding]</span>), after which, if
                         needed (message length is longer than the size of the initial buffer, most common case), the
                         read function will be called again. Example of sender and reader allocation: <br>
@@ -385,7 +471,7 @@
 
                     <div class="code">
                         <span class="hide"><a href="../Server/src/iomanager.cpp"
-                                class="externallink">Server/src/iomanager.cpp</a></span>
+                                class="filelink">Server/src/iomanager.cpp</a></span>
                         <span class="code">
                             std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)<br>
                                 { <br>
@@ -402,7 +488,7 @@
                     <p></p>
                     <div class="code">
                         <span class="hide"><a href="../Server/src/iomanager.cpp"
-                                class="externallink">Server/src/iomanager.cpp</a></span>
+                                class="filelink">Server/src/iomanager.cpp</a></span>
                         <span class="code">
                             std::pair<char *, size_t> IOManager::allocateReader(const char *buff)<br>
                                 { <br>
@@ -450,7 +536,7 @@
 
                     <div class="code">
                         <span class="hide"><a href="../Server/src/connection.cpp"
-                                class="externallink">Server/src/connection.cpp</a></span>
+                                class="filelink">Server/src/connection.cpp</a></span>
                         <span class="code">
                             void Connection::runIndividual(Client *client) <br>
                             { <br>
@@ -468,10 +554,10 @@
                         </span>
                     </div>
                     <p>
-                        <span id="bothbehaviour" class="highlight">Unexpected/wrong client behaviour</span> Commands
-                        that generate an empty output are not signaled in any way, nor is the client warned about this,
-                        they are simply sent an empty string. Upon issuing a nonexistent command or a command with a
-                        wrong number of arguments, the client will be advised on its proper usage.
+                        <span id="bothbehaviour" class="highlight">Unexpected/wrong client behaviour</span> Upon using
+                        commands that generate an empty output, nonexistent commands or commands with a wrong number of
+                        arguments, the client will be advised
+                        on their proper usage.
                     </p>
                     <li id="impluses" class="subhighlight">Use cases</li>
                     <p>
@@ -528,48 +614,14 @@
                                 [o] 4. IR1854-1 (23:13 -> 06:20, 07:07 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
                                 [o] 5. IR-N1668 (23:15 -> 05:55, 06:40 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
                                 <br>
-                                today cluj napoca suceava <br>
-                                Found 4 trains: <br>
-                                1. IR-N1838-1 <br>
-                                (01:07 -> 01:15, 08 min) Cluj Napoca Est -> Cluj Napoca <br>
-                                (01:27 -> 01:35, 08 min) Cluj Napoca -> Cluj Napoca Est <br>
-                                (01:35 -> 01:41, 06 min) Cluj Napoca Est -> Apahida <br>
-                                [...] <br>
-                                (07:47 -> 07:53, 06 min) Ciprian Porumbescu Hm. -> Stroieşti <br>
-                                (07:53 -> 08:01, 08 min) Stroieşti -> Suceava Vest <br>
-                                <br>
-                                2. IR1832 <br>
-                                (09:34 -> 09:42, 08 min) Cluj Napoca -> Cluj Napoca Est <br>
-                                (09:42 -> 09:48, 06 min) Cluj Napoca Est -> Apahida <br>
-                                (09:48 -> 09:50, 02 min) Apahida -> Ram. Cojocna <br>
-                                [...] <br>
-                                (16:02 -> 16:08, 06 min) Ciprian Porumbescu Hm. -> Stroieşti <br>
-                                (16:08 -> 16:16, 08 min) Stroieşti -> Suceava Vest <br>
-                                <br>
-                                3. IR1834-1 <br>
-                                (12:58 -> 13:06, 08 min) Cluj Napoca -> Cluj Napoca Est <br>
-                                [...] <br>
-                                (19:35 -> 19:43, 08 min) Stroieşti -> Suceava Vest <br>
-                                <br>
-                                4. IR-N1766-1 <br>
-                                (22:03 -> 22:11, 08 min) Cluj Napoca Est -> Cluj Napoca <br>
-                                [...] <br>
-                                (04:58 -> 05:06, 08 min) Stroieşti -> Suceava Vest <br>
-                                <br>
-                                At a glance (1/4 trains available) <br>
+                                departures cluj 10m <br>
                                 Number Depart Arrival Time <br>
-                                [x] 1. IR-N1838-1 (01:07 -> 08:01, 06:54) Cluj Napoca Est -> Suceava Vest <br>
-                                [x] 2. IR1832 (09:34 -> 16:16, 06:42) Cluj Napoca -> Suceava Vest <br>
-                                [x] 3. IR1834-1 (12:58 -> 19:43, 06:45) Cluj Napoca -> Suceava Vest <br>
-                                ---------- <br>
-                                [o] 4. IR-N1766-1 (22:03 -> 05:06, 07:03 +1day) Cluj Napoca Est -> Suceava Vest <br>
+                                [o] 1. R4705 (13:20 -> 13:25, 00:05) Cluj Napoca -> Baciu Triaj Hm. <br>
+                                [o] 2. R4703 (13:20 -> 13:26, 00:06) Cluj Napoca Est -> Apahida <br>
                             </span>
                         </div>
                         <li><span id="cases2" class="highlight">New client</span> The unexperienced client has no idea
-                            how
-                            to
-                            use
-                            the system:
+                            how to use the system:
                         </li>
                         <div class="code">
                             <span class="hide">Terminal output</span>
@@ -593,11 +645,7 @@
                         </div>
                         <li>
                             <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find
-                            exploits: By
-                            entering a command longer than the available buffer (of constant size) the command will be
-                            invalidated and the connection will be closed. Entering new lines will or random unicode
-                            characters will do nothing. Entering EOF will cause the client to no longer be able to send
-                            commands. Thus, the server will not crash due to user input.
+                            will cause the client to no longer be able to send commands (not really fixable). Thus, the
                         </li>
                     </ul>
                     </p>
@@ -740,6 +788,11 @@
         transition: 250ms;
     }
 
+    .filelink {
+        color: rgb(0, 189, 0);
+        transition: 250ms;
+    }
+
     a:hover {
         background-color: rgb(224, 224, 224);
         border-radius: 5px;
@@ -777,6 +830,22 @@
         width: fit-content;
         font-family: 'Courier New', Courier, monospace;
         border-radius: 3px;
+    }
+
+    .slim {
+        width: 11%;
+    }
+
+    .wide {
+        /* width: 70%; */
+    }
+
+    .digit {
+        text-align: right;
+    }
+
+    tr:nth-child(2n) {
+        background-color: #80808030;
     }
 
     .hide {

@@ -25,7 +25,7 @@ This is a multi-threaded application where:
 For Client and Server instances:
 - g++ version 9.3.0
 - make version 4.2.1
-- any unix system (no cross platform compatibility so far)
+- any unix system
 
 ### Build and start
 ```shell
