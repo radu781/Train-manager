@@ -94,13 +94,14 @@
                 <p>
                     Train manager is a command line interface application that provides users with information regarding
                     domestic trains' timetables in Romania. The entire logic behind the application is done in the
-                    server, the clients only send commands and receive data from the server. The server provides the
-                    data used by <a href="https://www.cfrcalatori.ro/" class="externallink"> Cfr Călători</a>, cloning
-                    part of their functionality. The database inquired for this project is an <span
-                        class="code">.xml</span> file (as this is how Cfr Călători stores their data) so an <a
+                    server, the clients only send commands and receive data
+                    from the server. The server provides the data used by <a href="https://www.cfrcalatori.ro/"
+                        class="externallink"> Cfr Călători</a>, cloning part of their functionality. The database
+                    inquired for this project is
+                    an <span class="code">.xml</span> file (as this is how Cfr Călători stores their data) so an <a
                         href="#pugi" class="internallink">xml parser</a> was used. Additional information (more in depth
-                    code details) about classes, class methods and members can be found in the project's source files as
-                    Doxygen comments.
+                    code details) about classes, class methods
+                    and members can be found in the project's source files as Doxygen comments.
                 </p>
             </div>
 
@@ -110,22 +111,24 @@
                 <p>
                     <span class="highlight" id="tcp">TCP</span> Connection oriented interaction between the server and
                     the clients. Due to the error checking, 3 way handshaking and data retransmission, this type of
-                    connection is more reliable, but also slower. Since accuracy is arguably more important than low
-                    latency, a TCP connection was employed for all communications, rather than a faster, yet less
-                    reliable UDP one.
+                    connection is more reliable, but also
+                    slower. Since accuracy is arguably more important than low latency, a TCP connection was employed
+                    for all communications, rather than a faster, yet less reliable UDP one.
                 </p>
                 <p>
                     <span class="highlight" id="stl">STL</span> The standard template library provides data structures
                     that are a must have in all C++ projects. In this project, std::pair, std::string, std::vector,
-                    std::unordered_map, std::unordered_set were made use of.
+                    std::unordered_map, std::unordered_set
+                    were made use of.
                 </p>
                 <p>
                     <a href="#pugibibl" class="internallink"> <span class="highlight" id="pugi">Pugixml</span></a> is
                     the api used to parse the xml file. It provides functions that can load, traverse and modify data in
-                    the file. The internal data is stored as a tree (more exactly, a DOM-like object). Even though
-                    memory and speed improvements have been made at the cost of not validating data, it is assumed that
-                    the xml file is valid. Despite using such a rich library, only several methods are used in order to
-                    achieve the project's goal.
+                    the file. The internal data is stored as a tree (more exactly, a DOM-like
+                    object). Even though memory and speed improvements have been made at the cost of not validating
+                    data, it is assumed that the xml file is valid. Despite using such a rich library, only several
+                    methods are used in order to achieve the
+                    project's goal.
                 </p>
             </div>
 
@@ -150,10 +153,11 @@
                     <p>
                         <span id="implclientbrief" class="highlight">Brief </span> The client side of the application is
                         relatively straight forward: once a connection to the server is established, the client is free
-                        to receive and send messages until they quit, unexpectedly close the application or lose the
-                        connection to the server. The first function that is called in the client is <span
-                            class="code">makeConnection()</span>, a function will attempt several times to establish a
-                        connection and that throws if unable to connect.
+                        to receive and send messages until
+                        they quit, unexpectedly close the application or lose the connection to the server. The first
+                        function that is called in the client is <span class="code">makeConnection()</span>, a function
+                        will attempt several times to establish
+                        a connection and that throws if unable to connect.
                     </p>
                     <p>
                     <div class="code">
@@ -222,9 +226,10 @@
                     <p>
                         <span id="implclientcomm" class="highlight">Communication </span>After connecting to the server,
                         two threads are created: a reader and a sender that allow for continuous and uninterrupted data
-                        transfer. Since the data is plaintext, it can be easily printed. The send thread reads the
-                        client input line by line, while the read thread reads data from the server by calling two
-                        helper functions: <span class="code"> allocateReader()</span> and <span class="code">
+                        transfer. Since the data is plaintext,
+                        it can be easily printed. The send thread reads the client input line by line, while the read
+                        thread reads data from the server by calling two helper functions: <span class="code">
+                            allocateReader()</span> and <span class="code">
                             split()</span> that extract the data, separating it from the byte size and padding (see <a
                             href="#datatransfer" class="internallink"> Data transfer</a>).
                     </p>
@@ -232,7 +237,8 @@
                     <p>
                         <span id="implserverbrief" class="highlight">Brief</span> The server side of the application is
                         more complex because it manages connections with multiple clients at a time and executes their
-                        commands while also avoiding race conditions. Similar to the client, the first method called is
+                        commands while also avoiding race conditions.
+                        Similar to the client, the first method called is
                         <span class="code"> makeConnection()</span>, a function that throws if unable to connect.
                     </p>
 
@@ -275,10 +281,11 @@
                     <p>
                         <span id="implservermain" class="highlight">Main loop</span> After establishing the connection,
                         the server's main loop accepts clients, sends them the message of the day and stores them into
-                        an unordered map. This thread is equivalent to the main thread, upon finishing its execution
-                        (which may only occur in the case of an uncaught exception) it closes the server (realistically
-                        this will never happen). The server will (currently) only send data when requested, an
-                        announcement system that broadcasts a message will soon be implemented. For each client the
+                        an unordered map. This thread is equivalent
+                        to the main thread, upon finishing its execution (which may only occur in the case of an
+                        uncaught exception) it closes the server (realistically this will never happen). The server will
+                        (currently) only send data when requested,
+                        an announcement system that broadcasts a message will soon be implemented. For each client the
                         <span class="code">runIndividual()</span> method is called that creates a reader thread, while
                         the main thread will delete the client entry in the unordered map upon disconnection (see <a
                             href="#conenctionloss" class="internallink"> Connection loss</a>).
@@ -293,8 +300,9 @@
                     <p>
                         <span id="implserverdata" class="highlight">Data normalization</span> All client input and
                         replaced by their non-diacritics equivalent (e.g. ”ă”, ”â” become ”a”). In addition, functions
-                        that find station names also accept partial and close matches (by using <a
-                            href="https://en.wikipedia.org/wiki/Levenshtein_distance" class="externallink">Levenshtein
+                        that find station names also accept partial
+                        and close matches (by using <a href="https://en.wikipedia.org/wiki/Levenshtein_distance"
+                            class="externallink">Levenshtein
                             distance</a>), however exact matches are prioritised. Find functions return multiple match
                         values like a real life search bar. For example, "cluj" will find the train stations "cluj
                         napoca", "cluj napoca est" and "iaai" will
@@ -434,7 +442,8 @@
                     </p>
                     <p>
                         All commands (apart from <span class="code">help</span> and <span class="code">quit</span>) have
-                        to search for the user inputted station or train name. These names are cached when the server
+                        to search for the user inputted station or train name. These names are <span
+                            id="cache">cached</span> when the server
                         starts (and <span class="code">getFile()</span> is called, see <a href="#implserverfile"
                             class="internallink">File loading</a>). In case of total mismatch (no exact, partial or
                         close matches are found) the functions are considerably faster, having to only iterate over
@@ -442,15 +451,16 @@
                         1500 unique station names or &approx; 1200 unique train names instead of the whole xml
                         (&approx;30.000 stations and &approx; 1200 trains). Of course, this adds unnecessary checks even
                         though the station names might be correct,
-                        but this is only equal to <sup>1</sup>/<sub>20</sub> of the time to actually find the stations.
+                        but this is only equal to <sup>1</sup>/<sub>60</sub> of the time to actually find the stations
+                        (yes, this was timed).
                     </p>
                     </p>
                     <p>
                         <span id="implserverlog" class="highlight">Logging</span> Client to server and server to client
                         messages are logged, as well as debug related information such as: clients being accepted,
-                        restarted in order to keep fresh data and ignore past and unwanted information. Logging is
-                        thread safe and (purposefully) slow in order
-                        to log everything in case of crashes. Logging can be disabled by removing compile time defines (
+                        restarted in order to keep fresh data and
+                        ignore past and unwanted information. Logging is thread safe and (purposefully) slow in order to
+                        log everything in case of crashes. Logging can be disabled by removing compile time defines (
                         <span class="code">ENABLE_COMM_LOGGING</span> <span class="code">ENABLE_DEBG_LOGGING</span> in
                         the server's root
                         <a href="../Server/Makefile" class="filelink">Makefile</a>).
@@ -466,23 +476,24 @@
                         arrays (<span class="code">char *</span>). An initial buffer is first used to read at least the
                         first part of the message (<span class="code">[byte_size][padding]</span>), after which, if
                         needed (message length is longer than the size of the initial buffer, most common case), the
-                        read function will be called again. Example of sender and reader allocation: <br>
+                        read function will be called again. Example
+                        of sender and reader allocation: <br>
                     </p>
 
                     <div class="code">
                         <span class="hide"><a href="../Server/src/iomanager.cpp"
                                 class="filelink">Server/src/iomanager.cpp</a></span>
                         <span class="code">
-                            std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)<br>
-                                { <br>
-                                <a class="tab"></a>const size_t bytes = str.size() * sizeof(str[0]) + 1; <br>
-                                <a class="tab"></a>const size_t dataSize = bytes + strlen(PADDING) + 12; <br>
-                                <a class="tab"></a>char *allocated = new char[dataSize]{}; <br>
-                                <a class="tab"></a>snprintf(allocated, dataSize, "\%lu\%s\%s", bytes,
-                                PADDING,str.c_str());
-                                <br>
-                                <a class="tab"></a>return {allocated, dataSize};<br>
-                                }
+                            std::pair&lt;char *, size_t> IOManager::allocateSender(const std::string &str)<br>
+                            { <br>
+                            <a class="tab"></a>const size_t bytes = str.size() * sizeof(str[0]) + 1; <br>
+                            <a class="tab"></a>const size_t dataSize = bytes + strlen(PADDING) + 12; <br>
+                            <a class="tab"></a>char *allocated = new char[dataSize]{}; <br>
+                            <a class="tab"></a>snprintf(allocated, dataSize, "\%lu\%s\%s", bytes,
+                            PADDING,str.c_str());
+                            <br>
+                            <a class="tab"></a>return {allocated, dataSize};<br>
+                            }
                         </span>
                     </div>
                     <p></p>
@@ -490,29 +501,29 @@
                         <span class="hide"><a href="../Server/src/iomanager.cpp"
                                 class="filelink">Server/src/iomanager.cpp</a></span>
                         <span class="code">
-                            std::pair<char *, size_t> IOManager::allocateReader(const char *buff)<br>
-                                { <br>
-                                <a class="tab"></a>auto [msg, size] = split(buff); <br>
-                                <a class="tab"></a>char *wholeMessage = new char[size]{}; <br>
-                                <a class="tab"></a>strcpy(wholeMessage, msg); <br>
+                            std::pair&lt;char *, size_t> IOManager::allocateReader(const char *buff)<br>
+                            { <br>
+                            <a class="tab"></a>auto [msg, size] = split(buff); <br>
+                            <a class="tab"></a>char *wholeMessage = new char[size]{}; <br>
+                            <a class="tab"></a>strcpy(wholeMessage, msg); <br>
+                            <br>
+                            <a class="tab"></a>return {wholeMessage, size};<br>
+                            }<br>
+                            std::pair&lt;const char *, size_t> IOManager::split(const char *str) <br>
+                            { <br>
+                            <a class="tab"></a>const char *paddingStart = strstr(str, PADDING);<br>
+                            <a class="tab"></a>if (paddingStart == nullptr)<br>
+                            <a class="tab"></a>
+                            <a class="tab"></a>throw std::runtime_error("Padding not found");<br>
+                            <br>
+                            <a class="tab"></a>char length[BUFF_SIZE + 1]{};<br>
+                            <a class="tab"></a>for (int i = 0; i < paddingStart - str; i++)<br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>length[i] = str[i];<br>
                                 <br>
-                                <a class="tab"></a>return {wholeMessage, size};<br>
-                                }<br>
-                                std::pair<const char *, size_t> IOManager::split(const char *str) <br>
-                                    { <br>
-                                    <a class="tab"></a>const char *paddingStart = strstr(str, PADDING);<br>
-                                    <a class="tab"></a>if (paddingStart == nullptr)<br>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>throw std::runtime_error("Padding not found");<br>
-                                    <br>
-                                    <a class="tab"></a>char length[BUFF_SIZE + 1]{};<br>
-                                    <a class="tab"></a>for (int i = 0; i < paddingStart - str; i++)<br>
-                                        <a class="tab"></a>
-                                        <a class="tab"></a>length[i] = str[i];<br>
-                                        <br>
-                                        <a class="tab"></a>return {paddingStart + strlen(PADDING),
-                                        atoi(length)};<br>
-                                        }
+                                <a class="tab"></a>return {paddingStart + strlen(PADDING),
+                                atoi(length)};<br>
+                                }
                         </span>
                     </div>
                     <p>
@@ -523,15 +534,17 @@
                     <p>
                         <span class="highlight" id="bothconnection">Connection loss</span> Read and send operations
                         check if the buffer received or sent match their size. In the eventuality that the sizes are
-                        different, an exception is thrown, however, if the value returned by the system <span
-                            class="code">read()</span> or <span class="code">write()</span> corresponds to an error, the
-                        connection is closed, assuming that the client or server has abruptly disconnected. <br> In case
-                        the client loses connection, the server will be unaffected, and able to accept other (including
-                        the same) clients. If the server shuts down, all clients' connections will be closed as no more
-                        data can be received. The <span class="code">read()</span> and <span class="code">write()</span>
-                        IOManager methods toggle the <span class="code">isConnected</span> client member variable if the
-                        connection is lost, thus the <span class="code">runIndividual()</span> method can efficiently
-                        remove the client from the clients map.
+                        different, an exception is thrown, however,
+                        if the value returned by the system <span class="code">read()</span> or <span
+                            class="code">write()</span> corresponds to an error, the connection is closed, assuming that
+                        the client or server has abruptly disconnected. <br> In
+                        case the client loses connection, the server will be unaffected, and able to accept other
+                        (including the same) clients. If the server shuts down, all clients' connections will be closed
+                        as no more data can be received. The
+                        <span class="code">read()</span> and <span class="code">write()</span> IOManager methods toggle
+                        the <span class="code">isConnected</span> client member variable if the connection is lost, thus
+                        the <span class="code">runIndividual()</span> method can efficiently remove the client from the
+                        clients map.
                     </p>
 
                     <div class="code">
@@ -644,8 +657,8 @@
                             </span>
                         </div>
                         <li>
-                            <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find
-                            will cause the client to no longer be able to send commands (not really fixable). Thus, the
+                            <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find will
+                            cause the client to no longer be able to send commands (not really fixable). Thus, the
                         </li>
                     </ul>
                     </p>
@@ -657,28 +670,35 @@
                 <h3 id="Conclusions">Conclusions</h3>
                 <p>
                     This application can be used to accurately tell the domestic timetable of trains in Romania, cloning
-                    part of Cfr Călători's functionality. Improvement ideas:
+                    part of Cfr Călători's functionality. Improvement ideas (proposed, implemented and not implemented)
+                    along the project's development that do not necessarily have to do with the main project's idea:
                 <ul>
                     <li>
                         Code related/server only
                         <ul>
                             <li>fix a bug where read/send operations have to check for empty strings (not fatal, just
                                 annoying to have to always consider this)</li>
-                            <li>fewer hardcoded variables</li>
                             <li>delays will be reset the upcoming day</li>
                             <li>broadcast feature for the server, maybe also server only commands</li>
-                            <li>efficiency: cache the results for sub-linear searches</li>
-                            <li>automatically download the latest data</li>
+                            <li>automatically download the latest data (for 2022, 2023 or whenever it changes)</li>
+                            <li><span class="strike">fewer hardcoded variables</span> all data is as dynamic as it can
+                                be, based on the xml file</li>
+                            <li><span class="strike">efficiency: cache the results for sub-linear searches</span> <a
+                                    href="#cache" class="internallink">only for failure</a> </li>
                         </ul>
                     </li>
                     <li>
                         User convenience/client only
                         <ul>
-                            <li>more commands: search by train number or type</li>
+                            <li>make a minimal UI</li>
                             <li>make the client application cross platform</li>
+                            <li><span class="strike">more commands: search by train number or type</span> <span
+                                    class="code">late</span> command does this</li>
+                            <li><span class="strike">make searches more permissive: substrings, close matches</span> <a
+                                    href="#implserverdata" class="internallink"> done</a></li>
+                            <li><span class="strike">add reconnect system in case the server disconnects</span> only implemented when the user starts their application</li>
                         </ul>
                     </li>
-                    <li>Others</li>
                 </ul>
                 </p>
             </div>
@@ -715,7 +735,6 @@
 <style>
     .main {
         display: flex;
-        overflow: auto;
         flex-direction: row;
         flex-wrap: nowrap;
     }
@@ -724,10 +743,16 @@
         position: sticky;
         position: -webkit-sticky;
         top: 0;
+        left: 0;
         align-self: flex-start;
-        margin-right: 10px;
+        padding-right: 5px;
+        padding-bottom: 50px;
+        margin-right: 5px;
         border-right: 2px solid gray;
+        background-color: #80808030;
     }
+
+    .main {}
 
     @media (max-width: 1000px) {
         .main {
@@ -736,14 +761,24 @@
 
         .left {
             border: none;
+            position: relative;
         }
     }
 
     html {
         padding: 0;
-        margin: 0 10px;
         scroll-behavior: smooth;
         text-align: justify;
+    }
+
+    body {
+        margin: 0;
+        margin-right: 5px;
+        padding: 0;
+    }
+
+    .strike {
+        text-decoration: line-through;
     }
 
     .title,
