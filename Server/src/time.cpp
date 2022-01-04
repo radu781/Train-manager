@@ -41,6 +41,12 @@ std::string Time::diffToString(unsigned endTime, unsigned startTime)
 
 bool Time::isBetween(unsigned time1, unsigned time2)
 {
-    return (current() > time1 && current() < time2) ||
-           (current() > time2 && current() < time1);
+    return (time1 < current() && current() < time2) ||
+           (time2 < current() && current() < time1);
+}
+
+bool Time::isBetween(unsigned time1, unsigned who, unsigned time2)
+{
+    return (time1 <= who && who <= time2) ||
+           (time2 <= who && who <= time1);
 }

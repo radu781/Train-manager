@@ -222,21 +222,30 @@ std::string Command::findByCity(const std::string &timeType)
 
         for (const auto &element : trasa)
         {
-            unsigned timeStamp = element.attribute(timeType.c_str()).as_int();
-            std::string cityStr = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
+            unsigned timeStamp = element.attribute(timeType.c_str()).as_uint();
+            std::string start = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
+            std::string dest = WordOperation::removeDiacritics(element.attribute(staDest).as_string());
 
-            if (matching.contains(cityStr))
+            if (matching.contains(start))
             {
-                if (timeType == OraS && Time::isBetween(timeStamp - delta, timeStamp))
-                    stations.push_back({tren, std::vector<pugi::xml_node>{element}});
-                else if (timeType == OraP && Time::isBetween(timeStamp - delta, timeStamp))
-                    stations.push_back({tren, std::vector<pugi::xml_node>{element}});
+                if (timeType == OraS && dest != start &&
+                    Time::isBetween(Time::current(), timeStamp, Time::current() + delta))
+                {
+                    if (dest != start)
+                        stations.push_back({tren, std::vector<pugi::xml_node>{element}});
+                }
+                else if (timeType == OraP && dest != start &&
+                         Time::isBetween(Time::current(), timeStamp, Time::current() + delta))
+                {
+                    if (dest != start)
+                        stations.push_back({tren, std::vector<pugi::xml_node>{element}});
+                }
             }
         }
     }
     if (stations.empty())
         return "Could not find any " + std::string(timeType == OraP ? "departures" : "arrivals") +
-               " in the upcoming " + Types::toString<int>(delta) + " minutes";
+               " in the upcoming " + Types::toString<int>(delta / 60) + " minutes";
     sort(stations);
     return getBrief(stations, false, timeType == std::string(OraS));
 }
@@ -530,8 +539,6 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim, boo
 
         unsigned start = vec.st.front().attribute(OraP).as_int();
         unsigned end = vec.st.back().attribute(OraS).as_int();
-        if (reverse)
-            std::swap(start, end);
 
         std::string orig = vec.st.front().attribute(staOrig).as_string();
         std::string dest = vec.st.back().attribute(staDest).as_string();
@@ -539,7 +546,6 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim, boo
             std::swap(orig, dest);
 
         std::string delta = Time::diffToString(end, start);
-
         if (availableTrains == 1 && needDelim)
             out += "----------\n";
         out += (needDelim ? available : "[o] ") + RPAD(Types::toString<unsigned>(++index) + ". ", 4) +
