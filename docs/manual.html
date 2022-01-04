@@ -163,64 +163,68 @@
                     <div class="code">
                         <span class="hide"><a href="../Client/src/connection.cpp"
                                 class="filelink">Client/src/connection.cpp</a></span>
-                        <span class="code">
-                            void Connection::makeConnection() <br>
-                            {<br>
-                            <a class="tab"></a>if ((serverFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) <br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>throw ConnectionException("Socket creation error"); <br>
-                                <br>
-                                <a class="tab"></a>serv_addr.sin_family = AF_INET; <br>
-                                <a class="tab"></a>serv_addr.sin_port = htons(PORT); <br> <br>
-                                <a class="tab"></a>if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) <br>
+                        <button id="button0" onclick="change(0)">Show code</button>
+                        <div class="codefield" id="code0">
+                            <span class="code">
+                                void Connection::makeConnection() <br>
+                                {<br>
+                                <a class="tab"></a>if ((serverFD = socket(AF_INET, SOCK_STREAM, 0)) < 0) <br>
                                     <a class="tab"></a>
-                                    <a class="tab"></a>throw ConnectionException("IPv4 address conversion error");
-                                    <br> <br>
-                                    <a class="tab"></a>const unsigned RETRY_ATTEMPTS = 5, TIME = 1; <br>
-
-                                    <a class="tab"></a>LoadingBar bar(RETRY_ATTEMPTS, TIME); <br>
-
-                                    <a class="tab"></a>for (unsigned i = 0; i < RETRY_ATTEMPTS; i++) <br>
+                                    <a class="tab"></a>throw ConnectionException("Socket creation error"); <br>
+                                    <br>
+                                    <a class="tab"></a>serv_addr.sin_family = AF_INET; <br>
+                                    <a class="tab"></a>serv_addr.sin_port = htons(PORT); <br> <br>
+                                    <a class="tab"></a>if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0)
+                                        <br>
                                         <a class="tab"></a>
-                                        <a class="tab"></a>if (connect(serverFD, (struct sockaddr *)&serv_addr,
-                                        sizeof(serv_addr)) < 0) <br>
+                                        <a class="tab"></a>throw ConnectionException("IPv4 address conversion error");
+                                        <br> <br>
+                                        <a class="tab"></a>const unsigned RETRY_ATTEMPTS = 5, TIME = 1; <br>
+
+                                        <a class="tab"></a>LoadingBar bar(RETRY_ATTEMPTS, TIME); <br>
+
+                                        <a class="tab"></a>for (unsigned i = 0; i < RETRY_ATTEMPTS; i++) <br>
                                             <a class="tab"></a>
-                                            <a class="tab"></a>{ <br>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>char buf[64]; <br>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>unsigned seconds = TIME + i * 2; <br>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>sprintf(buf, "%u/%u Connection failed, retrying in
-                                            %u seconds" , i
-                                            + 1, RETRY_ATTEMPTS, seconds); <br>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>
-                                            <a class="tab"></a>std::cout << buf << std::flush; <br>
-                                                <a class="tab"></a>
-                                                <a class="tab"></a>
-                                                <a class="tab"></a>bar.update(seconds); <br>
-                                                <a class="tab"></a>
-                                                <a class="tab"></a>} <br>
-                                                <a class="tab"></a>
-                                                <a class="tab"></a>else <br>
+                                            <a class="tab"></a>if (connect(serverFD, (struct sockaddr *)&serv_addr,
+                                            sizeof(serv_addr)) < 0) <br>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>{ <br>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>
-                                                <a class="tab"></a>connected = true; <br>
+                                                <a class="tab"></a>char buf[64]; <br>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>
-                                                <a class="tab"></a>return; <br>
+                                                <a class="tab"></a>unsigned seconds = TIME + i * 2; <br>
                                                 <a class="tab"></a>
-                                                <a class="tab"></a>} <br><br>
-                                                <a class="tab"></a>throw ConnectionException("Server connection
-                                                error");<br>
-                                                }
-                        </span>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>sprintf(buf, "%u/%u Connection failed, retrying in
+                                                %u seconds" , i
+                                                + 1, RETRY_ATTEMPTS, seconds); <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>std::cout << buf << std::flush; <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>bar.update(seconds); <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>} <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>else <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>{ <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>connected = true; <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>return; <br>
+                                                    <a class="tab"></a>
+                                                    <a class="tab"></a>} <br><br>
+                                                    <a class="tab"></a>throw ConnectionException("Server connection
+                                                    error");<br>
+                                                    }
+                            </span>
+                        </div>
                     </div>
                     </p>
                     <p>
@@ -245,38 +249,46 @@
                     <div class="code">
                         <span class="hide"><a href="../Server/src/connection.cpp"
                                 class="filelink">Server/src/connection.cpp</a></span>
-                        <span class="code">
-                            void Connection::makeConnection() <br>
-                            { <br>
-                            <a class="tab"></a>int optVal = 1; <br>
-                            <br>
-                            <a class="tab"></a>if ((socketFD = socket(AF_INET, SOCK_STREAM, 0)) == 0) <br>
-                            <a class="tab"></a><a class="tab"></a>throw ConnectionException("Socket creation error");
-                            <br>
-                            <a class="tab"></a>if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &optVal,
-                            sizeof(optVal)))
-                            <br>
-                            <a class="tab"></a><a class="tab"></a><a class="tab"></a>throw ConnectionException("Could
-                            not attach socket to port
-                            (setsockopt)");
-                            <br>
-                            <br>
-                            <a class="tab"></a>address.sin_family = AF_INET; <br>
-                            <a class="tab"></a>address.sin_addr.s_addr = INADDR_ANY; <br>
-                            <a class="tab"></a>address.sin_port = htons(PORT); <br>
-                            <br>
-                            <a class="tab"></a>if (bind(socketFD, (struct sockaddr *)&address, sizeof(address)) < 0)
+                        <button id="button1" onclick="change(1)">Show code</button>
+                        <div class="codefield" id="code1">
+
+                            <span class="code">
+                                void Connection::makeConnection() <br>
+                                { <br>
+                                <a class="tab"></a>int optVal = 1; <br>
                                 <br>
-                                <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not attach socket
-                                to port
-                                (bind)");
+                                <a class="tab"></a>if ((socketFD = socket(AF_INET, SOCK_STREAM, 0)) == 0) <br>
+                                <a class="tab"></a><a class="tab"></a>throw ConnectionException("Socket creation
+                                error");
                                 <br>
-                                <a class="tab"></a>if(listen(socketFD, 3) < 0) <br>
-                                    <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not listen
-                                    from the server!");
+                                <a class="tab"></a>if (setsockopt(socketFD, SOL_SOCKET, SO_REUSEADDR, &optVal,
+                                sizeof(optVal)))
+                                <br>
+                                <a class="tab"></a><a class="tab"></a><a class="tab"></a>throw
+                                ConnectionException("Could
+                                not attach socket to port
+                                (setsockopt)");
+                                <br>
+                                <br>
+                                <a class="tab"></a>address.sin_family = AF_INET; <br>
+                                <a class="tab"></a>address.sin_addr.s_addr = INADDR_ANY; <br>
+                                <a class="tab"></a>address.sin_port = htons(PORT); <br>
+                                <br>
+                                <a class="tab"></a>if (bind(socketFD, (struct sockaddr *)&address, sizeof(address)) < 0)
                                     <br>
-                                    }
-                        </span>
+                                    <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not attach
+                                    socket
+                                    to port
+                                    (bind)");
+                                    <br>
+                                    <a class="tab"></a>if(listen(socketFD, 3) < 0) <br>
+                                        <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not
+                                        listen
+                                        from the server!");
+                                        <br>
+                                        }
+                            </span>
+                        </div>
                     </div>
                     <p>
                         <span id="implservermain" class="highlight">Main loop</span> After establishing the connection,
@@ -292,7 +304,7 @@
                     </p>
                     <p>
                         <span id="implservercomm" class="highlight">Communication</span> Sending and reading data is the
-                        same as on the client side (see <a href="#datatransfer" class="internallink"> Data
+                        same as on the client side (see <a href="#bothdata" class="internallink"> Data
                             transfer</a>), except that the client input is also parsed. This input is tokenized,
                         validated in order to check if the requested action is supported and if the argument count is
                         correct, normalized and finally executed.
@@ -324,41 +336,45 @@
                     <div class="code">
                         <span class="hide"><a href="../Server/src/connection.cpp"
                                 class="filelink">Server/src/connection.cpp</a></span>
-                        <span class="code">
-                            void Command::getFile() <br>
-                            { <br>
-                            <a class="tab"></a>const std::string localPath = "resources/cfr_2021.xml"; <br>
-                            <a class="tab"></a>const std::string web = "..."; <br>
-                            <a class="tab"></a>const std::string args = "--tries=3 -O " + localPath; <br>
+                        <button id="button2" onclick="change(2)">Show code</button>
+                        <div class="codefield" id="code2">
+                            <span class="code">
+                                void Command::getFile() <br>
+                                { <br>
+                                <a class="tab"></a>const std::string localPath = "resources/cfr_2021.xml"; <br>
+                                <a class="tab"></a>const std::string web = "..."; <br>
+                                <a class="tab"></a>const std::string args = "--tries=3 -O " + localPath; <br>
 
-                            <a class="tab"></a>if (!std::filesystem::exists(localPath)) <br>
-                            <a class="tab"></a>{ <br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>std::lock_guard<std::mutex> lock(m); <br>
-                                <br>
+                                <a class="tab"></a>if (!std::filesystem::exists(localPath)) <br>
+                                <a class="tab"></a>{ <br>
                                 <a class="tab"></a>
-                                <a class="tab"></a>LOG_DEBUG("Xml does not exist locally, attempting to download");<br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>if (system(("wget " + web + args).c_str()) < 0) <br>
+                                <a class="tab"></a>std::lock_guard<std::mutex> lock(m); <br>
+                                    <br>
                                     <a class="tab"></a>
+                                    <a class="tab"></a>LOG_DEBUG("Xml does not exist locally, attempting to
+                                    download");<br>
                                     <a class="tab"></a>
-                                    <a class="tab"></a>LOG_DEBUG("Xml failed to download"); <br>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>else<br>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>LOG_DEBUG("Xml downloaded"); <br>
+                                    <a class="tab"></a>if (system(("wget " + web + args).c_str()) < 0) <br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>LOG_DEBUG("Xml failed to download"); <br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>else<br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>LOG_DEBUG("Xml downloaded"); <br>
 
-                                    <a class="tab"></a>} <br>
-                                    <a class="tab"></a>if (!doc.empty()) <br>
-                                    <a class="tab"></a>{ <br>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>LOG_DEBUG("Loaded xml"); <br>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>doc.load_file(localPath.c_str()); <br>
-                                    <a class="tab"></a>} <br>
-                                    }
-                        </span>
+                                        <a class="tab"></a>} <br>
+                                        <a class="tab"></a>if (!doc.empty()) <br>
+                                        <a class="tab"></a>{ <br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>LOG_DEBUG("Loaded xml"); <br>
+                                        <a class="tab"></a>
+                                        <a class="tab"></a>doc.load_file(localPath.c_str()); <br>
+                                        <a class="tab"></a>} <br>
+                                        }
+                            </span>
+                        </div>
                     </div>
                     <p>
                         <span id="implserverprotocol" class="highlight">Protocol</span> Commands may have a fixed or a
@@ -483,48 +499,54 @@
                     <div class="code">
                         <span class="hide"><a href="../Server/src/iomanager.cpp"
                                 class="filelink">Server/src/iomanager.cpp</a></span>
-                        <span class="code">
-                            std::pair&lt;char *, size_t> IOManager::allocateSender(const std::string &str)<br>
-                            { <br>
-                            <a class="tab"></a>const size_t bytes = str.size() * sizeof(str[0]) + 1; <br>
-                            <a class="tab"></a>const size_t dataSize = bytes + strlen(PADDING) + 12; <br>
-                            <a class="tab"></a>char *allocated = new char[dataSize]{}; <br>
-                            <a class="tab"></a>snprintf(allocated, dataSize, "\%lu\%s\%s", bytes,
-                            PADDING,str.c_str());
-                            <br>
-                            <a class="tab"></a>return {allocated, dataSize};<br>
-                            }
-                        </span>
+                        <button id="button3" onclick="change(3)">Show code</button>
+                        <div class="codefield" id="code3">
+                            <span class="code">
+                                std::pair&lt;char *, size_t> IOManager::allocateSender(const std::string &str)<br>
+                                { <br>
+                                <a class="tab"></a>const size_t bytes = str.size() * sizeof(str[0]) + 1; <br>
+                                <a class="tab"></a>const size_t dataSize = bytes + strlen(PADDING) + 12; <br>
+                                <a class="tab"></a>char *allocated = new char[dataSize]{}; <br>
+                                <a class="tab"></a>snprintf(allocated, dataSize, "\%lu\%s\%s", bytes,
+                                PADDING,str.c_str());
+                                <br>
+                                <a class="tab"></a>return {allocated, dataSize};<br>
+                                }
+                            </span>
+                        </div>
                     </div>
                     <p></p>
                     <div class="code">
-                        <span class="hide"><a href="../Server/src/iomanager.cpp"
+                        <span class="hide">from <a href="../Server/src/iomanager.cpp"
                                 class="filelink">Server/src/iomanager.cpp</a></span>
-                        <span class="code">
-                            std::pair&lt;char *, size_t> IOManager::allocateReader(const char *buff)<br>
-                            { <br>
-                            <a class="tab"></a>auto [msg, size] = split(buff); <br>
-                            <a class="tab"></a>char *wholeMessage = new char[size]{}; <br>
-                            <a class="tab"></a>strcpy(wholeMessage, msg); <br>
-                            <br>
-                            <a class="tab"></a>return {wholeMessage, size};<br>
-                            }<br>
-                            std::pair&lt;const char *, size_t> IOManager::split(const char *str) <br>
-                            { <br>
-                            <a class="tab"></a>const char *paddingStart = strstr(str, PADDING);<br>
-                            <a class="tab"></a>if (paddingStart == nullptr)<br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>throw std::runtime_error("Padding not found");<br>
-                            <br>
-                            <a class="tab"></a>char length[BUFF_SIZE + 1]{};<br>
-                            <a class="tab"></a>for (int i = 0; i < paddingStart - str; i++)<br>
-                                <a class="tab"></a>
-                                <a class="tab"></a>length[i] = str[i];<br>
+                        <button id="button4" onclick="change(4)">Show code</button>
+                        <div class="codefield" id='code4'>
+                            <span class="code">
+                                std::pair&lt;char *, size_t> IOManager::allocateReader(const char *buff)<br>
+                                { <br>
+                                <a class="tab"></a>auto [msg, size] = split(buff); <br>
+                                <a class="tab"></a>char *wholeMessage = new char[size]{}; <br>
+                                <a class="tab"></a>strcpy(wholeMessage, msg); <br>
                                 <br>
-                                <a class="tab"></a>return {paddingStart + strlen(PADDING),
-                                atoi(length)};<br>
-                                }
-                        </span>
+                                <a class="tab"></a>return {wholeMessage, size};<br>
+                                }<br>
+                                std::pair&lt;const char *, size_t> IOManager::split(const char *str) <br>
+                                { <br>
+                                <a class="tab"></a>const char *paddingStart = strstr(str, PADDING);<br>
+                                <a class="tab"></a>if (paddingStart == nullptr)<br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>throw std::runtime_error("Padding not found");<br>
+                                <br>
+                                <a class="tab"></a>char length[BUFF_SIZE + 1]{};<br>
+                                <a class="tab"></a>for (int i = 0; i < paddingStart - str; i++)<br>
+                                    <a class="tab"></a>
+                                    <a class="tab"></a>length[i] = str[i];<br>
+                                    <br>
+                                    <a class="tab"></a>return {paddingStart + strlen(PADDING),
+                                    atoi(length)};<br>
+                                    }
+                            </span>
+                        </div>
                     </div>
                     <p>
                         The purpose of the padding is only to differentiate the message size from the actual message and
@@ -550,21 +572,24 @@
                     <div class="code">
                         <span class="hide"><a href="../Server/src/connection.cpp"
                                 class="filelink">Server/src/connection.cpp</a></span>
-                        <span class="code">
-                            void Connection::runIndividual(Client *client) <br>
-                            { <br>
-                            <a class="tab"></a>std::thread reader(readIndividual, client); <br>
-                            <a class="tab"></a>reader.join(); <br>
-                            <br>
-                            <a class="tab"></a>if (!client->isConnected) <br>
-                            <a class="tab"></a>{ <br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>clients.erase(client->sock); <br>
-                            <a class="tab"></a>
-                            <a class="tab"></a>LOG_DEBUG("Client erased"); <br>
-                            <a class="tab"></a>} <br>
-                            }
-                        </span>
+                        <button id="button5" onclick="change(5)">Show code</button>
+                        <div class="codefield" id="code5">
+                            <span class="code">
+                                void Connection::runIndividual(Client *client) <br>
+                                { <br>
+                                <a class="tab"></a>std::thread reader(readIndividual, client); <br>
+                                <a class="tab"></a>reader.join(); <br>
+                                <br>
+                                <a class="tab"></a>if (!client->isConnected) <br>
+                                <a class="tab"></a>{ <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>clients.erase(client->sock); <br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>LOG_DEBUG("Client erased"); <br>
+                                <a class="tab"></a>} <br>
+                                }
+                            </span>
+                        </div>
                     </div>
                     <p>
                         <span id="bothbehaviour" class="highlight">Unexpected/wrong client behaviour</span> Upon using
@@ -577,84 +602,92 @@
                         The server is started. Multiple client connections are made. The following scenarios can be
                         assumed (non-essential data is omitted by "[...]"):
                     <ul>
-                        <li><span id="usespref" class="highlight">Preferred behaviour</span> the client tries to (and
-                            knows how to) get information about two trains: </li>
+                        <li>
+                            <span id="usespref" class="highlight">Preferred behaviour</span> the client tries to (and
+                            knows how to) get information about two trains:
+                        </li>
                         <div class="code">
                             <span class="hide">Terminal output</span>
-                            <span class="code">
-                                $ bin/main <br>
-                                ---Welcome to Train Manager--- <br>
-                                Today is 25/12/2021(Saturday) <br>
-                                today iasi bucuresti <br>
-                                Found 5 trains: <br>
-                                1. IR1660 <br>
-                                (06:20 -> 06:24, 04 min) Iaşi -> Nicolina <br>
-                                (06:25 -> 06:31, 06 min) Nicolina -> Ciurea Hm. <br>
-                                (06:31 -> 06:44, 13 min) Ciurea Hm. -> Bârnova Hm. <br>
-                                [...] <br>
-                                (12:40 -> 12:43, 03 min) P. mac. R1 Buciumeni -> Chitila <br>
-                                (12:43 -> 12:54, 11 min) Chitila -> Bucureşti Nord Gr.A <br>
-                                <br>
-                                2. IR1662 <br>
-                                (14:15 -> 14:19, 04 min) Iaşi -> Nicolina <br>
-                                (14:21 -> 14:27, 06 min) Nicolina -> Ciurea Hm. <br>
-                                (14:27 -> 14:40, 13 min) Ciurea Hm. -> Bârnova Hm. <br>
-                                [...] <br>
-                                (20:35 -> 20:37, 02 min) P. mac. R1 Buciumeni -> Chitila <br>
-                                (20:37 -> 20:47, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
-                                <br>
-                                3. IR1664 <br>
-                                (15:58 -> 16:02, 04 min) Iaşi -> Nicolina <br>
-                                [...] <br>
-                                (22:07 -> 22:17, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
-                                <br>
-                                4. IR1854-1 <br>
-                                (23:13 -> 23:27, 14 min) Iaşi -> Leţcani <br>
-                                [...] <br>
-                                (06:08 -> 06:20, 12 min) Chitila -> Bucureşti Nord Gr.A <br>
-                                <br>
-                                5. IR-N1668 <br>
-                                (23:15 -> 23:19, 04 min) Iaşi -> Nicolina <br>
-                                [...] <br>
-                                (05:45 -> 05:55, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
-                                <br>
-                                At a glance (2/5 trains available) <br>
-                                Number Depart Arrival Time <br>
-                                [x] 1. IR1660 (06:20 -> 12:54, 06:34) Iaşi -> Bucureşti Nord Gr.A <br>
-                                [x] 2. IR1662 (14:15 -> 20:47, 06:32) Iaşi -> Bucureşti Nord Gr.A <br>
-                                [x] 3. IR1664 (15:58 -> 22:17, 06:19) Iaşi -> Bucureşti Nord Gr.A <br>
-                                ---------- <br>
-                                [o] 4. IR1854-1 (23:13 -> 06:20, 07:07 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
-                                [o] 5. IR-N1668 (23:15 -> 05:55, 06:40 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
-                                <br>
-                                departures cluj 10m <br>
-                                Number Depart Arrival Time <br>
-                                [o] 1. R4705 (13:20 -> 13:25, 00:05) Cluj Napoca -> Baciu Triaj Hm. <br>
-                                [o] 2. R4703 (13:20 -> 13:26, 00:06) Cluj Napoca Est -> Apahida <br>
-                            </span>
+                            <button id="button6" onclick="change(6)">Show output</button>
+                            <div class="codefield" id="code6">
+                                <span class="code">
+                                    $ bin/main <br>
+                                    ---Welcome to Train Manager--- <br>
+                                    Today is 25/12/2021(Saturday) <br>
+                                    today iasi bucuresti <br>
+                                    Found 5 trains: <br>
+                                    1. IR1660 <br>
+                                    (06:20 -> 06:24, 04 min) Iaşi -> Nicolina <br>
+                                    (06:25 -> 06:31, 06 min) Nicolina -> Ciurea Hm. <br>
+                                    (06:31 -> 06:44, 13 min) Ciurea Hm. -> Bârnova Hm. <br>
+                                    [...] <br>
+                                    (12:40 -> 12:43, 03 min) P. mac. R1 Buciumeni -> Chitila <br>
+                                    (12:43 -> 12:54, 11 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                    <br>
+                                    2. IR1662 <br>
+                                    (14:15 -> 14:19, 04 min) Iaşi -> Nicolina <br>
+                                    (14:21 -> 14:27, 06 min) Nicolina -> Ciurea Hm. <br>
+                                    (14:27 -> 14:40, 13 min) Ciurea Hm. -> Bârnova Hm. <br>
+                                    [...] <br>
+                                    (20:35 -> 20:37, 02 min) P. mac. R1 Buciumeni -> Chitila <br>
+                                    (20:37 -> 20:47, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                    <br>
+                                    3. IR1664 <br>
+                                    (15:58 -> 16:02, 04 min) Iaşi -> Nicolina <br>
+                                    [...] <br>
+                                    (22:07 -> 22:17, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                    <br>
+                                    4. IR1854-1 <br>
+                                    (23:13 -> 23:27, 14 min) Iaşi -> Leţcani <br>
+                                    [...] <br>
+                                    (06:08 -> 06:20, 12 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                    <br>
+                                    5. IR-N1668 <br>
+                                    (23:15 -> 23:19, 04 min) Iaşi -> Nicolina <br>
+                                    [...] <br>
+                                    (05:45 -> 05:55, 10 min) Chitila -> Bucureşti Nord Gr.A <br>
+                                    <br>
+                                    At a glance (2/5 trains available) <br>
+                                    Number Depart Arrival Time <br>
+                                    [x] 1. IR1660 (06:20 -> 12:54, 06:34) Iaşi -> Bucureşti Nord Gr.A <br>
+                                    [x] 2. IR1662 (14:15 -> 20:47, 06:32) Iaşi -> Bucureşti Nord Gr.A <br>
+                                    [x] 3. IR1664 (15:58 -> 22:17, 06:19) Iaşi -> Bucureşti Nord Gr.A <br>
+                                    ---------- <br>
+                                    [o] 4. IR1854-1 (23:13 -> 06:20, 07:07 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
+                                    [o] 5. IR-N1668 (23:15 -> 05:55, 06:40 +1day) Iaşi -> Bucureşti Nord Gr.A <br>
+                                    <br>
+                                    departures cluj 10m <br>
+                                    Number Depart Arrival Time <br>
+                                    [o] 1. R4705 (13:20 -> 13:25, 00:05) Cluj Napoca -> Baciu Triaj Hm. <br>
+                                    [o] 2. R4703 (13:20 -> 13:26, 00:06) Cluj Napoca Est -> Apahida <br>
+                                </span>
+                            </div>
                         </div>
                         <li><span id="cases2" class="highlight">New client</span> The unexperienced client has no idea
                             how to use the system:
                         </li>
                         <div class="code">
                             <span class="hide">Terminal output</span>
-                            <span class="code">
-                                ---Welcome to Train Manager--- <br>
-                                Today is 25/12/2021(Saturday) <br>
-                                today <br>
-                                Command today has 2 mandatory arguments, 0 provided <br>
-                                help <br>
-                                Supported commands: <br>
-                                today [start] [dest] (get today's trains schedules from [start] to [dest]) <br>
-                                departures [start] [delta] (get the departures from [start] [...]) <br>
-                                arrivals [dest] [delta] (get the arrivals to [dest] [...] <br>
-                                quit (close the connection) <br>
-                                help [command] (get more detailed help about a command) <br>
-                                today brasov <br>
-                                Command today has 2 mandatory arguments, 1 provided <br>
-                                depart <br>
-                                Command depart not found <br>
-                            </span>
+                            <button id="button7" onclick="change(7)">Show output</button>
+                            <div class="codefield" id="code7">
+                                <span class="code">
+                                    ---Welcome to Train Manager--- <br>
+                                    Today is 25/12/2021(Saturday) <br>
+                                    today <br>
+                                    Command today has 2 mandatory arguments, 0 provided <br>
+                                    help <br>
+                                    Supported commands: <br>
+                                    today [start] [dest] (get today's trains schedules from [start] to [dest]) <br>
+                                    departures [start] [delta] (get the departures from [start] [...]) <br>
+                                    arrivals [dest] [delta] (get the arrivals to [dest] [...] <br>
+                                    quit (close the connection) <br>
+                                    help [command] (get more detailed help about a command) <br>
+                                    today brasov <br>
+                                    Command today has 2 mandatory arguments, 1 provided <br>
+                                    depart <br>
+                                    Command depart not found <br>
+                                </span>
+                            </div>
                         </div>
                         <li>
                             <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find will
@@ -696,7 +729,8 @@
                                     class="code">late</span> command does this</li>
                             <li><span class="strike">make searches more permissive: substrings, close matches</span> <a
                                     href="#implserverdata" class="internallink"> done</a></li>
-                            <li><span class="strike">add reconnect system in case the server disconnects</span> only implemented when the user starts their application</li>
+                            <li><span class="strike">add reconnect system in case the server disconnects</span> only
+                                implemented when the user starts their application</li>
                         </ul>
                     </li>
                 </ul>
@@ -766,6 +800,7 @@
     }
 
     html {
+        margin-bottom: 10%;
         padding: 0;
         scroll-behavior: smooth;
         text-align: justify;
@@ -867,12 +902,37 @@
         border-radius: 3px;
     }
 
+    .code .codefield {
+        visibility: hidden;
+        height: 0;
+    }
+
+    p~.code {
+
+        background-color: white;
+    }
+
+    li~.code {
+        background-color: white;
+    }
+
     .slim {
         width: 11%;
     }
 
-    .wide {
-        /* width: 70%; */
+    button {
+        background-color: #424242;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+        padding: 3px;
+        transition: all 250ms;
+        color: white;
+    }
+
+    button:hover {
+        background-color: #5c5c5c;
+        transition: all 250ms;
     }
 
     .digit {
@@ -922,5 +982,31 @@
         }
     }
 </style>
+
+<script>
+    let buttons = [];
+
+    function change(index) {
+        const code = document.getElementById(`code${index}`);
+        const codefield = document.getElementsByClassName("codefield");
+        const button = document.getElementById(`button${index}`);
+
+        if (buttons[index] == undefined || buttons[index] == false) {
+            buttons[index] = true;
+            button.innerHTML = "Hide code";
+
+            code.style = "visibility: visible; height: auto; background-color: rgb(224, 224, 224);";
+            codefield.style = "visibility: visible; height: auto;;";
+        }
+        else {
+            buttons[index] = false;
+            button.innerHTML = "Show code";
+
+            code.style = "visibility: hidden; height: 0";
+            codefield.style = "visibility: hidden; height: 0;";
+        }
+    }
+
+</script>
 
 </html>
