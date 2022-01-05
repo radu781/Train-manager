@@ -72,6 +72,8 @@ private:
      */
     static void makeConnection();
 
+    static void makeThreads();
+
     /**
      * @brief Closes the connection with the client and sets a flag needed for
      * the main runIndividual() thread to clear the disconnected clients
@@ -97,4 +99,5 @@ private:
      */
     static const unsigned PORT = 8080;
     static std::mutex m;
+    static const size_t prethreadCount = 100, fdOffset = 4;
 };

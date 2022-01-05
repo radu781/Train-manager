@@ -15,11 +15,17 @@ Command::Command(const std::string &str)
         return;
 
     std::string trimmed = WordOperation::trim(str);
-    std::istringstream in(trimmed);
-    std::string token;
-    // TODO: add more delims in the future
-    while (std::getline(in, token, ' '))
-        command.push_back(token);
+
+    char *cstr = new char[trimmed.size() + 1];
+    trimmed.copy(cstr, trimmed.size());
+    const char *delim = " ,;'?";
+    char *ptr = strtok(cstr, delim);
+    while (ptr != nullptr)
+    {
+        command.push_back(ptr);
+        ptr = strtok(NULL, delim);
+    }
+    delete[] cstr;
 }
 
 Command::CommandTypes Command::validate()
@@ -262,8 +268,7 @@ unsigned Command::extractTime(const std::string &str)
         return atoi(str.c_str());
 
     unsigned seconds = 0, minutes = 0, hours = 0;
-    for (size_t last = 0, next = str.find_first_of(literals);
-         /* last != next &&*/ next != -1lu;
+    for (size_t last = 0, next = str.find_first_of(literals); next != -1lu;
          last = next + 1, next = str.find_first_of(literals, last))
     {
         std::string ele = str.substr(last, next - last);

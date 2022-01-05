@@ -15,6 +15,7 @@ Connection *Connection::getInstance()
     if (!instance)
     {
         makeConnection();
+        makeThreads();
         instance = new Connection;
     }
     return instance;
@@ -34,9 +35,17 @@ void Connection::run()
                               int sock = acceptIndividual();
                               Client *client = new Client(sock);
                               IOManager::send(client, Command::motd());
-
-                              clients.insert({sock, client});
-                              clients[sock]->thread = std::thread(runIndividual, client);
+                            if (clients.contains(sock))
+                            {
+                                clients[sock]->thread = std::thread(runIndividual, client);
+                                LOG_DEBUG("Loaded existing thread " + Types::toString<int>(sock));
+                            }
+                            else
+                            {
+                                clients.insert({sock, new Client(sock)});
+                                clients[sock]->thread = std::thread(runIndividual, client);
+                                LOG_DEBUG("Loaded into new thread: " + Types::toString<int>(sock));
+                            }
                           } });
     setup.join();
 
@@ -72,6 +81,13 @@ void Connection::closeConnection(Client *client)
     LOG_COMMUNICATION("[Lost connection]", false, client->sock);
 }
 
+void Connection::makeThreads()
+{
+    LOG_DEBUG(Types::toString<size_t>(prethreadCount) + "Threads reinit");
+    for (size_t i = 0; i < prethreadCount; i++)
+        clients.insert({i + fdOffset, new Client(0)});
+}
+
 void Connection::runIndividual(Client *client)
 {
     std::thread reader(readIndividual, client);
@@ -80,8 +96,11 @@ void Connection::runIndividual(Client *client)
     // sender.join();
     if (!client->isConnected)
     {
+        std::lock_guard<std::mutex> lock(m);
         clients.erase(client->sock);
         LOG_DEBUG("Client erased");
+        if (clients.size() < prethreadCount)
+            makeThreads();
     }
 }
 

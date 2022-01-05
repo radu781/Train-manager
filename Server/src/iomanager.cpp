@@ -16,11 +16,6 @@ std::string IOManager::read(Client *client)
     }
     if (strlen(buff) == 0)
         return "";
-    // if (strlen(buff123) != reader123)
-    // {
-    //     std::cout << (size_t)reader123 << " " << strlen(buff123) << '\n';
-    //     throw std::runtime_error("Incorrect size read");
-    // }
 
     auto [wholeMessage, size] = allocateReader(buff);
 
