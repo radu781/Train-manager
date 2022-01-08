@@ -449,6 +449,8 @@ void Command::getFile()
         std::lock_guard<std::mutex> lock(m);
 
         LOG_DEBUG("Xml does not exist locally, attempting to download");
+        if (!std::filesystem::exists("resources/"))
+            std::filesystem::create_directory("resources/");
         if (system(("wget " + web + args).c_str()) < 0)
             LOG_DEBUG("Xml failed to download");
         else

@@ -13,17 +13,15 @@ std::mutex Connection::m;
 Connection *Connection::getInstance()
 {
     if (!instance)
-    {
-        makeConnection();
-        makeThreads();
         instance = new Connection;
-    }
     return instance;
 }
 
 Connection::Connection()
 {
     Command::getFile();
+    makeThreads();
+    makeConnection();
 }
 
 void Connection::run()
@@ -59,9 +57,10 @@ void Connection::processSignal(int sig)
 {
     if (sig == SIGINT)
     {
-        LOG_DEBUG("got signal" + Types::toString<int>(sig));
-        system(("zip \"" + Log::getInstance()->getName() + ".zip\" Logs/*.txt").c_str());
-        system("rm Logs/*.txt");
+        LOG_DEBUG("Got SIGINT, closing all connections");
+        for (auto &[socket, client] : clients)
+            closeConnection(client);
+
         exit(0);
     }
 }
@@ -98,8 +97,12 @@ void Connection::closeConnection(Client *client)
 void Connection::makeThreads()
 {
     LOG_DEBUG(Types::toString<size_t>(prethreadCount) + " Threads reinit");
-    for (size_t i = 0; i < prethreadCount; i++)
-        clients.insert({i + fdOffset, new Client()});
+    for (size_t i = 0, j = 0; i < prethreadCount; i++)
+    {
+        for (j = i + fdOffset; clients.contains(j); j++)
+            ;
+        clients.insert({j, new Client()});
+    }
 }
 
 void Connection::runIndividual(Client *client)
@@ -113,7 +116,7 @@ void Connection::runIndividual(Client *client)
         std::lock_guard<std::mutex> lock(m);
         clients.erase(client->getSock());
         LOG_DEBUG("Client erased");
-        if (clients.size() < prethreadCount)
+        if (clients.size() < prethreadCount / 5)
             makeThreads();
     }
 }

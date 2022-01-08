@@ -102,5 +102,5 @@ private:
      */
     static const unsigned PORT = 8080;
     static std::mutex m;
-    static constexpr size_t prethreadCount = 5, fdOffset = 4;
+    static constexpr size_t prethreadCount = 50, fdOffset = 4;
 };

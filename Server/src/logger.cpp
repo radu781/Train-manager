@@ -18,6 +18,21 @@ Log::Log()
     if (!std::filesystem::is_directory("Logs"))
         std::filesystem::create_directory("Logs");
 
+    std::filesystem::path path("Logs/");
+    for (auto &entry : std::filesystem::directory_iterator(path))
+    {
+        std::string name = entry.path().stem().string();
+        std::string extension = entry.path().extension().string();
+
+        if (extension == ".txt")
+        {
+            std::string cmd = "zip 'Logs/" + name + ".zip' 'Logs/" + name + extension + "'";
+            system((cmd).c_str());
+            system(std::string("rm 'Logs/" + name + extension + "'").c_str());
+            break;
+        }
+    }
+
     currentPath = "Logs/" + Time::currentStrVerbose() + ".txt";
     out = std::ofstream(currentPath);
 }
