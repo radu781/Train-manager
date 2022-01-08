@@ -14,6 +14,7 @@ Connection *Connection::instance = nullptr;
 int Connection::serverFD = 0;
 bool Connection::connected = false;
 sockaddr_in Connection::serv_addr;
+std::mutex Connection::m;
 
 Connection *Connection::getInstance()
 {
