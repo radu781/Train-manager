@@ -12,7 +12,7 @@ class Connection
 public:
     /**
      * @brief Get the instance object
-     * 
+     *
      * \return The instance object
      */
     static Connection *getInstance();
@@ -23,34 +23,37 @@ public:
      * added to an unordered map and then runIndividual() is called on the pair
      */
     static void run();
+    static void setup();
+    static void processSignal(int sig);
 
     static int socketFD;
     // might not be safe to have this static, but it worked so far
     static sockaddr_in address;
     friend class IOManager;
+
 private:
     /**
      * @brief Client main function that calls readIndividual() and
      * sendIndividual() in separate threads, while the main thread cleans up
      * the disconnected clients
-     * 
+     *
      * \param client Client whose thread is started
      */
     static void runIndividual(Client *client);
 
     /**
      * @brief Establishes the connection with a client
-     * 
+     *
      * \return Socket of the client that connected
      */
-    static int acceptIndividual();
+    static Client *acceptIndividual(sockaddr_in addr, int socket);
 
     /**
      * @brief Sends data to the given client. If unable to send (due to the
      * client's disconnection), the client's socket will be freed such that no
      * memory/threads are wasted
-     * 
-     * \param client Client to send data to 
+     *
+     * \param client Client to send data to
      * \param str Data to be sent
      */
     static void sendIndividual(Client *client, const std::string &str);
@@ -59,15 +62,15 @@ private:
      * @brief Reads data from the given client. If unable to read (due to the
      * client's disconnection), the client's socket will the freed such that no
      * memory/threads are wasted
-     * 
-     * \param client Client to listen to for input 
+     *
+     * \param client Client to listen to for input
      */
     static void readIndividual(Client *client);
 
     Connection();
 
     /**
-     * @brief Is called only once and sets up the connection by calling 
+     * @brief Is called only once and sets up the connection by calling
      * socket, setsockopt, bind and listen
      */
     static void makeConnection();
@@ -77,7 +80,7 @@ private:
     /**
      * @brief Closes the connection with the client and sets a flag needed for
      * the main runIndividual() thread to clear the disconnected clients
-     * 
+     *
      * \param client The client whose connection will be closed
      */
     static void closeConnection(Client *client);
@@ -99,5 +102,5 @@ private:
      */
     static const unsigned PORT = 8080;
     static std::mutex m;
-    static const size_t prethreadCount = 100, fdOffset = 4;
+    static constexpr size_t prethreadCount = 5, fdOffset = 4;
 };

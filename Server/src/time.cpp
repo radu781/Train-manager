@@ -9,6 +9,18 @@ unsigned Time::current()
 
     return timeInSec;
 }
+std::string Time::currentStrVerbose()
+{
+    const char *yearDelim = "-", *hourDelim = ":";
+    time_t now = ::time(0);
+    tm *ltm = localtime(&now);
+    char buf[32];
+    sprintf(buf, "%d%s%.2d%s%.2d %.2d%s%.2d%s%.2d", ltm->tm_year + 1900,
+            yearDelim, ltm->tm_mon + 1, yearDelim, ltm->tm_mday, ltm->tm_hour,
+            hourDelim, ltm->tm_min, hourDelim, ltm->tm_sec);
+
+    return buf;
+}
 
 std::string Time::toString(unsigned seconds)
 {

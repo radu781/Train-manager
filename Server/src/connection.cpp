@@ -1,5 +1,5 @@
 #include "pc.h"
-#include <netinet/in.h>
+#include <signal.h>
 #include "communication/command.hpp"
 #include "communication/connection.hpp"
 #include "communication/iomanager.hpp"
@@ -28,28 +28,42 @@ Connection::Connection()
 
 void Connection::run()
 {
-    std::thread setup([]()
-                      {
-                          for (;;)
-                          {
-                              int sock = acceptIndividual();
-                              Client *client = new Client(sock);
-                              IOManager::send(client, Command::motd());
-                            if (clients.contains(sock))
-                            {
-                                clients[sock]->thread = std::thread(runIndividual, client);
-                                LOG_DEBUG("Loaded existing thread " + Types::toString<int>(sock));
-                            }
-                            else
-                            {
-                                clients.insert({sock, new Client(sock)});
-                                clients[sock]->thread = std::thread(runIndividual, client);
-                                LOG_DEBUG("Loaded into new thread: " + Types::toString<int>(sock));
-                            }
-                          } });
+    signal(SIGINT, processSignal);
+    std::thread setup(Connection::setup);
     setup.join();
 
-    LOG_DEBUG("all joined");
+    LOG_DEBUG("all joined, server closing");
+}
+
+void Connection::setup()
+{
+    for (;;)
+    {
+        Client *client = acceptIndividual(address, socketFD);
+        int sock = client->getSock();
+        if (clients.contains(client->getSock()))
+        {
+            clients[sock]->thread = std::thread(runIndividual, client);
+            LOG_DEBUG("Loaded existing thread " + Types::toString<int>(sock));
+        }
+        else
+        {
+            clients.insert({sock, new Client()});
+            clients[sock]->thread = std::thread(runIndividual, client);
+            LOG_DEBUG("Loaded into new thread: " + Types::toString<int>(sock));
+        }
+    }
+}
+
+void Connection::processSignal(int sig)
+{
+    if (sig == SIGINT)
+    {
+        LOG_DEBUG("got signal" + Types::toString<int>(sig));
+        system(("zip \"" + Log::getInstance()->getName() + ".zip\" Logs/*.txt").c_str());
+        system("rm Logs/*.txt");
+        exit(0);
+    }
 }
 
 void Connection::makeConnection()
@@ -76,16 +90,16 @@ possible cause: Address already in use");
 void Connection::closeConnection(Client *client)
 {
     std::lock_guard<std::mutex> lock(m);
-    close(client->sock);
+    close(client->getSock());
     client->isConnected = false;
-    LOG_COMMUNICATION("[Lost connection]", false, client->sock);
+    LOG_COMMUNICATION("[Lost connection]", false, client->getSock());
 }
 
 void Connection::makeThreads()
 {
-    LOG_DEBUG(Types::toString<size_t>(prethreadCount) + "Threads reinit");
+    LOG_DEBUG(Types::toString<size_t>(prethreadCount) + " Threads reinit");
     for (size_t i = 0; i < prethreadCount; i++)
-        clients.insert({i + fdOffset, new Client(0)});
+        clients.insert({i + fdOffset, new Client()});
 }
 
 void Connection::runIndividual(Client *client)
@@ -97,21 +111,23 @@ void Connection::runIndividual(Client *client)
     if (!client->isConnected)
     {
         std::lock_guard<std::mutex> lock(m);
-        clients.erase(client->sock);
+        clients.erase(client->getSock());
         LOG_DEBUG("Client erased");
         if (clients.size() < prethreadCount)
             makeThreads();
     }
 }
 
-int Connection::acceptIndividual()
+Client *Connection::acceptIndividual(sockaddr_in addr, int socket)
 {
-    int address_length = sizeof(address), sock;
-    if ((sock = ::accept(socketFD, (sockaddr *)&address, (socklen_t *)&address_length)) < 0)
+    Client *client = new Client(address, socket);
+    if (client->accept() < 0)
         throw ConnectionException("Could not accept");
 
-    LOG_COMMUNICATION("[Client accepted]", false, sock);
-    return sock;
+    LOG_COMMUNICATION(std::string("[Client accepted]") + client->getIP(), false, client->getSock());
+    IOManager::send(client, Command::motd());
+
+    return client;
 }
 
 void Connection::sendIndividual(Client *client, const std::string &str)

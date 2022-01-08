@@ -1,18 +1,25 @@
 #include "pc.h"
+#include "utils/time.hpp"
 
 Log *Log::instance = nullptr;
 std::ofstream Log::out;
 std::mutex Log::m;
+std::string Log::currentPath;
 
 Log *Log::getInstance()
 {
     if (instance == nullptr)
-    {
         instance = new Log;
-        remove("log.txt");
-        out = std::ofstream("log.txt", std::ios_base::app);
-    }
     return instance;
+}
+
+Log::Log()
+{
+    if (!std::filesystem::is_directory("Logs"))
+        std::filesystem::create_directory("Logs");
+
+    currentPath = "Logs/" + Time::currentStrVerbose() + ".txt";
+    out = std::ofstream(currentPath);
 }
 
 void Log::communication(const std::string &str, bool sending, int who)
@@ -44,4 +51,9 @@ void Log::debug(const std::string &str, const char *function, const char *file, 
     else
         out << "Debug info only: \"" << str << "\"" << std::endl;
 #endif
+}
+
+std::string Log::getName()
+{
+    return currentPath.substr(0, currentPath.size() - 4);
 }

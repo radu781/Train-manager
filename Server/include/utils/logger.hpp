@@ -50,9 +50,10 @@ public:
      */
     static void debug(const std::string &str, const char *function = nullptr,
                       const char *file = nullptr, unsigned line = 0);
+    static std::string getName();
 
 private:
-    Log() {}
+    Log();
 
     /**
      * @brief The (only) instance object
@@ -68,4 +69,5 @@ private:
      * @brief Mutex used to lock the logging operations (file write)
      */
     static std::mutex m;
+    static std::string currentPath;
 };

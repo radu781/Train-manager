@@ -6,6 +6,7 @@ class Time
 {
 public:
     static unsigned current();
+    static std::string currentStrVerbose();
     static std::string toString(unsigned seconds);
     static unsigned diff(unsigned endTime, unsigned startTime);
     static std::string diffToString(unsigned endTime, unsigned startTime);

@@ -8,7 +8,7 @@ std::string IOManager::read(Client *client)
 {
     char buff[BUFF_SIZE]{};
 
-    ssize_t reader = ::read(client->sock, buff, BUFF_SIZE);
+    ssize_t reader = ::read(client->getSock(), buff, BUFF_SIZE);
     if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
     {
         Connection::closeConnection(client);
@@ -23,11 +23,11 @@ std::string IOManager::read(Client *client)
     {
         std::string out = wholeMessage;
         delete[] wholeMessage;
-        LOG_COMMUNICATION(out, false, client->sock);
+        LOG_COMMUNICATION(out, false, client->getSock());
         return out;
     }
 
-    reader = ::read(client->sock, wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
+    reader = ::read(client->getSock(), wholeMessage + strlen(wholeMessage), size - strlen(wholeMessage));
     if ((size_t)reader == 0 || (strlen(buff) == 0 && buff[BUFF_SIZE - 1] != 0))
     {
         Connection::closeConnection(client);
@@ -35,7 +35,7 @@ std::string IOManager::read(Client *client)
     }
 
     std::string out = wholeMessage;
-    LOG_COMMUNICATION(out, false, client->sock);
+    LOG_COMMUNICATION(out, false, client->getSock());
     delete[] wholeMessage;
     return out;
 }
@@ -45,7 +45,7 @@ void IOManager::send(Client *client, const std::string &data)
     if (data == "")
         return;
     auto [sendMe, sendMeSize] = allocateSender(data);
-    ssize_t sender = ::write(client->sock, sendMe, sendMeSize);
+    ssize_t sender = ::write(client->getSock(), sendMe, sendMeSize);
     delete[] sendMe;
 
     if ((size_t)sender == 0 || (size_t)sender == (size_t)-1)
@@ -60,7 +60,7 @@ void IOManager::send(Client *client, const std::string &data)
         throw std::runtime_error("Incorrect size sent");
     }
 
-    LOG_COMMUNICATION(data, true, client->sock);
+    LOG_COMMUNICATION(data, true, client->getSock());
 }
 
 std::pair<char *, size_t> IOManager::allocateSender(const std::string &str)

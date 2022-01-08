@@ -17,6 +17,10 @@
 #include <utility>
 #include <vector>
 
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
 #include "utils/exceptions.hpp"
 #include "utils/logger.hpp"
 #include "utils/types.hpp"
