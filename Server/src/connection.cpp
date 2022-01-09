@@ -1,8 +1,9 @@
 #include "pc.h"
 #include <signal.h>
-#include "communication/command.hpp"
+#include "communication/commandgeneral.hpp"
 #include "communication/connection.hpp"
 #include "communication/iomanager.hpp"
+#include "commands/motd.hpp"
 
 Connection *Connection::instance = nullptr;
 int Connection::socketFD = 0;
@@ -19,7 +20,7 @@ Connection *Connection::getInstance()
 
 Connection::Connection()
 {
-    Command::getFile();
+    CommandGeneral::getFile();
     makeThreads();
     makeConnection();
 }
@@ -91,7 +92,8 @@ void Connection::closeConnection(Client *client)
     std::lock_guard<std::mutex> lock(m);
     close(client->getSock());
     client->isConnected = false;
-    LOG_COMMUNICATION("[Lost connection]", false, client->getSock());
+    if (client->getSock()) // set to 0 when server gets SIGINT
+        LOG_COMMUNICATION("[Lost connection]", false, client->getSock());
 }
 
 void Connection::makeThreads()
@@ -128,8 +130,9 @@ Client *Connection::acceptIndividual(sockaddr_in addr, int socket)
         throw ConnectionException("Could not accept");
 
     LOG_COMMUNICATION(std::string("[Client accepted]") + client->getIP(), false, client->getSock());
-    IOManager::send(client, Command::motd());
-
+    client->cmd = new Motd();
+    IOManager::send(client, client->cmd->execute());
+    delete client->cmd;
     return client;
 }
 
@@ -147,7 +150,7 @@ void Connection::readIndividual(Client *client)
     while (client->isConnected)
     {
         std::string fromClient = IOManager::read(client);
-        Command cmd(fromClient);
+        CommandGeneral cmd(fromClient);
         sendIndividual(client, cmd.execute());
     }
 }

@@ -7,8 +7,9 @@ DEFINES = -D ENABLE_COMM_LOGGING -D ENABLE_DEBG_LOGGING
 INCLUDES = -I include
 
 all: pch
+	$(MAKE) -C include/commands
 	$(MAKE) -C src
-pch: 
+pch:
 	test -f include/pc.h.gch || g++ $(FLAGS) -x c++-header include/pc.h
 clean:
 	-rm -r $(BUILD_DIR) $(BIN_DIR)
