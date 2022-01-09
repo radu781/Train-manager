@@ -40,7 +40,7 @@ void Connection::setup()
     {
         Client *client = acceptIndividual(address, socketFD);
         int sock = client->getSock();
-        if (clients.contains(client->getSock()))
+        if (clients.contains(sock))
         {
             clients[sock]->thread = std::thread(runIndividual, client);
             LOG_DEBUG("Loaded existing thread " + Types::toString<int>(sock));
@@ -94,6 +94,9 @@ void Connection::closeConnection(Client *client)
     client->isConnected = false;
     if (client->getSock()) // set to 0 when server gets SIGINT
         LOG_COMMUNICATION("[Lost connection]", false, client->getSock());
+
+    clients.erase(client->getSock());
+    delete client;
 }
 
 void Connection::makeThreads()
@@ -116,7 +119,6 @@ void Connection::runIndividual(Client *client)
     if (!client->isConnected)
     {
         std::lock_guard<std::mutex> lock(m);
-        clients.erase(client->getSock());
         LOG_DEBUG("Client erased");
         if (clients.size() < prethreadCount / 5)
             makeThreads();

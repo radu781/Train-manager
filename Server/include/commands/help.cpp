@@ -1,4 +1,5 @@
 #include "help.hpp"
+#include "communication/commandparser.hpp"
 
 std::string Help::execute()
 {
@@ -13,13 +14,13 @@ std::string Help::execute()
 \n\tquit (close the connection)\n\
 \nhelp [command] (get more detailed help about a command)";
 
-    if (commands.find(command->at(1)) == commands.end())
+    if (CommandParser::commands.find(command->at(1)) == CommandParser::commands.end())
         return "Command " + command->at(1) + " not found";
 
-    auto cmd = commands.at(command->at(1));
+    auto cmd = CommandParser::commands.at(command->at(1));
     switch (cmd.type)
     {
-    case CommandTypes::TODAY:
+    case CommandParser::CommandTypes::TODAY:
         return "The today command returns all trains from a starting point to \
 an end point.\nIt has " +
                Types::toString<int>(cmd.mandatory) + " mandatory arguments \
@@ -27,7 +28,7 @@ an end point.\nIt has " +
 automatically detected, there is no need to separate them, for example\n\t\
 today cluj napoca iasi\nwill return all trains from cluj napoca to iasi.";
 
-    case CommandTypes::DEPARTURES:
+    case CommandParser::CommandTypes::DEPARTURES:
         return "The departures command returns all departures from a starting \
 point in the next delta minutes.\nIt has " +
                Types::toString<int>(cmd.mandatory) +
@@ -37,7 +38,7 @@ The accepted literals are \"s\", \"m\", \"h\" for seconds, minutes, hours \
 respectively. Example usage:\n\tdepartures iasi 10m\nwill return the trains \
 that depart from iasi in the following 10 minutes.";
 
-    case CommandTypes::ARRIVALS:
+    case CommandParser::CommandTypes::ARRIVALS:
         return "The arrivals command returns all arrivals from a starting \
 point in the next delta minutes.\nIt has " +
                Types::toString<int>(cmd.mandatory) +
@@ -45,10 +46,10 @@ point in the next delta minutes.\nIt has " +
 Example usage:\n\tarrivals iasi 15\nwill return the trains that arrive in iasi \
 in the following 15 minutes.";
 
-    case CommandTypes::LATE:
+    case CommandParser::CommandTypes::LATE:
         return "Not yet implemented";
 
-    case CommandTypes::HELP:
+    case CommandParser::CommandTypes::HELP:
         return "Why would you need help about a help command?";
 
     default:

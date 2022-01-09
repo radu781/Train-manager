@@ -22,11 +22,6 @@ public:
      */
     std::string execute();
 
-    friend class Connection;
-
-    std::string arrivals();
-    std::string departures();
-
 private:
     enum class CommandTypes;
 
@@ -50,7 +45,6 @@ public:
         pugi::xml_node root;
         Stations st;
     };
-
 
     /**
      * @brief Vector containing the user command main call and arguments
@@ -85,13 +79,8 @@ private:
         CommandTypes type;
     };
 
-    const std::unordered_map<std::string, Args> commands = {
-        {"today", {2, -1u, CommandTypes::TODAY}},
-        {"departures", {2, -1u, CommandTypes::DEPARTURES}},
-        {"arrivals", {2, -1u, CommandTypes::ARRIVALS}},
-        {"late", {2, -1u, CommandTypes::LATE}},
-        {"help", {0, 1u, CommandTypes::HELP}},
-    };
+    friend class Help;
+    static const std::unordered_map<std::string, Args> commands;
 
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
     static constexpr const char *CatTren = "CategorieTren", *Numar = "Numar";

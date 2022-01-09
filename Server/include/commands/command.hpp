@@ -9,20 +9,17 @@ public:
     virtual std::string undo() = 0;
 
     void setCommand(std::vector<std::string> *command);
-    void init(pugi::xml_document *doc, std::unordered_set<std::string> *cities, std::unordered_set<std::string> *trains);
+    void init(pugi::xml_document *doc, std::unordered_set<std::string> *cities,
+              std::unordered_set<std::string> *trains);
     virtual ~Command() {}
 
-    static pugi::xml_document *doc;
-    static std::unordered_set<std::string> *cityNames;
-    static std::unordered_set<std::string> *trainNumbers;
-
+protected:
     enum class FindBy
     {
         CITY,
         TRAIN
     };
 
-protected:
     /**
      * @brief Check if the unordered_set contains the string
      *
@@ -34,6 +31,7 @@ protected:
     unsigned extractTime(const std::string &str);
 
     std::string findByCity(const std::string &how);
+
     using Stations = std::vector<pugi::xml_node>;
     struct Train
     {
@@ -45,6 +43,10 @@ protected:
     std::string getBrief(const std::vector<Train> &obj, bool needDelim = true, bool reverse = false);
 
     void sort(std::vector<Train> &obj);
+
+    static pugi::xml_document *doc;
+    static std::unordered_set<std::string> *cityNames;
+    static std::unordered_set<std::string> *trainNumbers;
 
     static std::mutex m;
 

@@ -11,6 +11,13 @@ std::unordered_set<std::string> CommandParser::cityNames;
 std::unordered_set<std::string> CommandParser::trainNumbers;
 std::mutex CommandParser::m;
 Command *CommandParser::icmd;
+const std::unordered_map<std::string, CommandParser::Args> CommandParser::commands = {
+    {"today", {2, -1u, CommandTypes::TODAY}},
+    {"departures", {2, -1u, CommandTypes::DEPARTURES}},
+    {"arrivals", {2, -1u, CommandTypes::ARRIVALS}},
+    {"late", {2, -1u, CommandTypes::LATE}},
+    {"help", {0, 1u, CommandTypes::HELP}},
+};
 
 CommandParser::CommandParser(const std::string &str)
 {
