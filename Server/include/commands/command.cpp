@@ -11,6 +11,29 @@ void Command::setCommand(std::vector<std::string> *command)
     this->command = command;
 }
 
+std::unordered_set<std::string> Command::match(const std::string &str, FindBy criteria)
+{
+    assert(criteria == FindBy::CITY || criteria == FindBy::TRAIN);
+#ifndef FIND_THRESHOLD
+    const unsigned MAX_SIZE_ADJUSTMENT = 4;
+    const unsigned threshold = str.size() <= MAX_SIZE_ADJUSTMENT ? 1 : (str.size() / 4 + 1);
+#else
+    const unsigned threshold = FIND_THRESHOLD;
+#endif
+    std::unordered_set<std::string> out;
+
+    std::string search = (criteria == FindBy::CITY) ? WordOperation::removeDiacritics(str) : str;
+
+    for (const auto &ele : (criteria == FindBy::CITY) ? *cityNames : *trainNumbers)
+        if (ele == search)
+            return {WordOperation::removeDiacritics(ele)};
+        else if ((WordOperation::distance(ele, search) <= threshold && ele != "") ||
+                 (threshold > 1 && ele.find(search) != -1lu))
+            out.insert(WordOperation::removeDiacritics(ele));
+
+    return out;
+}
+
 void Command::init(pugi::xml_document *doc, std::unordered_set<std::string> *cities, std::unordered_set<std::string> *trains)
 {
     this->doc = doc;
@@ -117,25 +140,104 @@ void Command::sort(std::vector<Train> &obj)
               { return left.st.front().attribute("OraP").as_uint() < right.st.front().attribute("OraP").as_uint(); });
 }
 
-std::unordered_set<std::string> Command::match(const std::string &str, FindBy criteria)
+std::string Command::findByCity(const std::string &timeType)
 {
-    assert(criteria == FindBy::CITY || criteria == FindBy::TRAIN);
-#ifndef FIND_THRESHOLD
-    const unsigned MAX_SIZE_ADJUSTMENT = 4;
-    const unsigned threshold = str.size() <= MAX_SIZE_ADJUSTMENT ? 1 : (str.size() / 4 + 1);
-#else
-    const unsigned threshold = FIND_THRESHOLD;
-#endif
-    std::unordered_set<std::string> out;
+    assert(timeType == OraS || timeType == OraP);
+    std::string wholeCity;
+    for (size_t i = 1; i < command->size() - 1; i++)
+        wholeCity += command->at(i);
+    wholeCity = WordOperation::removeDiacritics(wholeCity);
 
-    std::string search = criteria == FindBy::CITY ? WordOperation::removeDiacritics(str) : str;
+    std::unordered_set<std::string> matching = match(wholeCity, FindBy::CITY);
+    if (matching.empty())
+        return "Please enter a valid city";
 
-    for (const auto &ele : criteria == FindBy::CITY ? *cityNames : *trainNumbers)
-        if (ele == search)
-            return {WordOperation::removeDiacritics(ele)};
-        else if ((WordOperation::distance(ele, search) <= threshold && ele != "") ||
-                 (threshold > 1 && ele.find(search) != -1lu))
-            out.insert(WordOperation::removeDiacritics(ele));
+    auto trenuri = doc->child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
 
-    return out;
+    unsigned delta = extractTime(command->back());
+    if (delta == -1u)
+        return "Please try not to use negative values";
+    if (delta == -2u)
+        return "Please use some digits too";
+    if (delta == -3u)
+        return "Please use only number or literals as shown in \"help departures\"";
+    if ((unsigned)delta > Time::SECONDS_IN_DAY)
+        return "Please use the \"today\" command instead for timetables further than a day";
+
+    std::vector<Train> stations;
+
+    for (const auto &tren : trenuri)
+    {
+        auto trasa = tren.child("Trase").child("Trasa").children();
+
+        for (const auto &element : trasa)
+        {
+            unsigned timeStamp = element.attribute(timeType.c_str()).as_uint();
+            std::string start = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
+            std::string dest = WordOperation::removeDiacritics(element.attribute(staDest).as_string());
+
+            if (matching.contains(start))
+            {
+                if (timeType == OraS && dest != start &&
+                    Time::isBetween(Time::current(), timeStamp, Time::current() + delta))
+                {
+                    if (dest != start)
+                        stations.push_back({tren, std::vector<pugi::xml_node>{element}});
+                }
+                else if (timeType == OraP && dest != start &&
+                         Time::isBetween(Time::current(), timeStamp, Time::current() + delta))
+                {
+                    if (dest != start)
+                        stations.push_back({tren, std::vector<pugi::xml_node>{element}});
+                }
+            }
+        }
+    }
+    if (stations.empty())
+        return "Could not find any " + std::string(timeType == OraP ? "departures" : "arrivals") +
+               " in the upcoming " + Types::toString<int>(delta / 60) + " minutes";
+    sort(stations);
+    return getBrief(stations, false, timeType == std::string(OraS));
+}
+
+unsigned Command::extractTime(const std::string &str)
+{
+    if (str.find('-') != -1lu)
+        return -1u;
+    if (std::none_of(str.begin(), str.end(), isdigit))
+        return -2u;
+
+    const char *literals = "smhSMH";
+    if (str.find_first_of(literals) == -1lu)
+        return atoi(str.c_str());
+
+    unsigned seconds = 0, minutes = 0, hours = 0;
+    for (size_t last = 0, next = str.find_first_of(literals); next != -1lu;
+         last = next + 1, next = str.find_first_of(literals, last))
+    {
+        std::string ele = str.substr(last, next - last);
+        LOG_DEBUG(ele);
+
+        switch (str[next])
+        {
+        case 's':
+        case 'S':
+            seconds += atoi(ele.c_str());
+            break;
+        case 'm':
+        case 'M':
+            minutes += atoi(ele.c_str());
+            break;
+        case 'h':
+        case 'H':
+            hours += atoi(ele.c_str());
+            break;
+        default:
+            LOG_DEBUG("Unexpected literal " + ele + " " + ele[next]);
+        }
+    }
+
+    if (hours + minutes + seconds == 0)
+        return -3u;
+    return hours * 3600 + minutes * 60 + seconds;
 }

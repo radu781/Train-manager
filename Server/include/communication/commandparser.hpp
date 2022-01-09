@@ -1,10 +1,9 @@
 #pragma once
 
 #include "pc.h"
-#include <unordered_set>
 #include "commands/command.hpp"
 
-class CommandGeneral
+class CommandParser
 {
 public:
     static Command *icmd;
@@ -14,7 +13,7 @@ public:
      *
      * \param str String input from user (exactly as sent)
      */
-    CommandGeneral(const std::string &str);
+    CommandParser(const std::string &str);
 
     /**
      * @brief Actually execute the command
@@ -27,7 +26,6 @@ public:
 
     std::string arrivals();
     std::string departures();
-    std::string late();
 
 private:
     enum class CommandTypes;
@@ -53,10 +51,6 @@ public:
         Stations st;
     };
 
-    std::string getVerbose(const std::vector<Train> &obj);
-    std::string getBrief(const std::vector<Train> &obj, bool needDelim = true, bool reverse = false);
-
-    void sort(std::vector<Train> &obj);
 
     /**
      * @brief Vector containing the user command main call and arguments
@@ -68,31 +62,6 @@ public:
     static std::unordered_set<std::string> trainNumbers;
 
 private:
-    enum class FindBy
-    {
-        CITY,
-        TRAIN
-    };
-    /**
-     * @brief Check if the unordered_set contains the string
-     *
-     * \param str String to be searched for in the string. Substrings are
-     * considered valid too
-     * \return Vector of all matches
-     */
-    static std::unordered_set<std::string> match(const std::string &str, FindBy criteria);
-
-    /**
-     * @brief Split the command member into two strings by following the rule:
-     * [begin, i], (i, end], where 0 < i < command.size()
-     *
-     * \return 2 valid city names if found, empty strings otherwise
-     */
-    std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> splitNames();
-
-    std::string findByCity(const std::string &how);
-    unsigned extractTime(const std::string &str);
-
     static std::mutex m;
 
     enum class CommandTypes
@@ -124,8 +93,6 @@ private:
         {"help", {0, 1u, CommandTypes::HELP}},
     };
 
-    static constexpr const char *OraS = "OraS", *OraP = "OraP";
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
-    static constexpr const char *trainOk = "[o] ", *trainNOk = "[x] ";
     static constexpr const char *CatTren = "CategorieTren", *Numar = "Numar";
 };

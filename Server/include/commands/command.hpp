@@ -9,14 +9,31 @@ public:
     virtual std::string undo() = 0;
 
     void setCommand(std::vector<std::string> *command);
-    void init(pugi::xml_document *doc, std::unordered_set<std::string> *cities, std::unordered_set<std::string>* trains);
+    void init(pugi::xml_document *doc, std::unordered_set<std::string> *cities, std::unordered_set<std::string> *trains);
     virtual ~Command() {}
 
     static pugi::xml_document *doc;
     static std::unordered_set<std::string> *cityNames;
     static std::unordered_set<std::string> *trainNumbers;
 
+    enum class FindBy
+    {
+        CITY,
+        TRAIN
+    };
+
 protected:
+    /**
+     * @brief Check if the unordered_set contains the string
+     *
+     * \param str String to be searched for in the string. Substrings are
+     * considered valid too
+     * \return Vector of all matches
+     */
+    static std::unordered_set<std::string> match(const std::string &str, FindBy criteria);
+    unsigned extractTime(const std::string &str);
+
+    std::string findByCity(const std::string &how);
     using Stations = std::vector<pugi::xml_node>;
     struct Train
     {
@@ -29,45 +46,9 @@ protected:
 
     void sort(std::vector<Train> &obj);
 
-    enum class FindBy
-    {
-        CITY,
-        TRAIN
-    };
-    static std::unordered_set<std::string> match(const std::string &str, FindBy criteria);
-
     static std::mutex m;
 
-    std::vector<std::string>* command;
-    // friend class Connection;
-
-    enum class CommandTypes
-    {
-        TODAY,
-        DEPARTURES,
-        ARRIVALS,
-        LATE,
-        HELP,
-
-        COUNT,
-
-        NOT_ENOUGH_ARGS,
-        TOO_MANY_ARGS,
-        NOT_FOUND
-    };
-    struct Args
-    {
-        unsigned mandatory;
-        unsigned optional;
-        CommandTypes type;
-    };
-
-    const std::unordered_map<std::string, Args> commands = {
-        {"today", {2, -1u, CommandTypes::TODAY}},
-        {"departures", {2, -1u, CommandTypes::DEPARTURES}},
-        {"arrivals", {2, -1u, CommandTypes::ARRIVALS}},
-        {"late", {2, -1u, CommandTypes::LATE}},
-        {"help", {0, 1u, CommandTypes::HELP}}};
+    std::vector<std::string> *command;
 
     static constexpr const char *OraS = "OraS", *OraP = "OraP";
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";

@@ -1,6 +1,6 @@
 #include "pc.h"
 #include <signal.h>
-#include "communication/commandgeneral.hpp"
+#include "communication/commandparser.hpp"
 #include "communication/connection.hpp"
 #include "communication/iomanager.hpp"
 #include "commands/motd.hpp"
@@ -20,7 +20,7 @@ Connection *Connection::getInstance()
 
 Connection::Connection()
 {
-    CommandGeneral::getFile();
+    CommandParser::getFile();
     makeThreads();
     makeConnection();
 }
@@ -150,7 +150,7 @@ void Connection::readIndividual(Client *client)
     while (client->isConnected)
     {
         std::string fromClient = IOManager::read(client);
-        CommandGeneral cmd(fromClient);
+        CommandParser cmd(fromClient);
         sendIndividual(client, cmd.execute());
     }
 }

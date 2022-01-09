@@ -13,7 +13,7 @@ objects = connection.o \
 		client.o \
 		iomanager.o \
 		logger.o \
-		commandgeneral.o \
+		commandparser.o \
 		pugixml.o \
 		wordoperation.o \
 		types.o \
