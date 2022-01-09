@@ -51,6 +51,7 @@ public:
     static void debug(const std::string &str, const char *function = nullptr,
                       const char *file = nullptr, unsigned line = 0);
     static std::string getName();
+    static void close();
 
 private:
     Log();

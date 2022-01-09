@@ -62,6 +62,7 @@ void Connection::processSignal(int sig)
         for (auto &[socket, client] : clients)
             closeConnection(client);
 
+        Log::getInstance()->close();
         exit(0);
     }
 }

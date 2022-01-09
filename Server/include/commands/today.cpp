@@ -53,7 +53,7 @@ std::string Today::execute()
             unsorted.push_back({tren, stations});
     }
 
-    Command::sort(unsorted);
+    Command::sort(unsorted, Criteria::DEPARTURE);
     return getVerbose(unsorted) + "\n" + getBrief(unsorted);
 }
 

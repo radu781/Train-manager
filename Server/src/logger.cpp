@@ -72,3 +72,8 @@ std::string Log::getName()
 {
     return currentPath.substr(0, currentPath.size() - 4);
 }
+
+void Log::close()
+{
+    out.close();
+}

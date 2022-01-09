@@ -30,8 +30,6 @@ protected:
     static std::unordered_set<std::string> match(const std::string &str, FindBy criteria);
     unsigned extractTime(const std::string &str);
 
-    std::string findByCity(const std::string &how);
-
     using Stations = std::vector<pugi::xml_node>;
     struct Train
     {
@@ -40,9 +38,15 @@ protected:
     };
 
     std::string getVerbose(const std::vector<Train> &obj);
-    std::string getBrief(const std::vector<Train> &obj, bool needDelim = true, bool reverse = false);
+    std::string getBrief(const std::vector<Train> &obj, bool needDelim = true);
 
-    void sort(std::vector<Train> &obj);
+    enum class Criteria
+    {
+        DEPARTURE,
+        ARRIVAL
+    };
+
+    void sort(std::vector<Train> &obj, Criteria c);
 
     static pugi::xml_document *doc;
     static std::unordered_set<std::string> *cityNames;
