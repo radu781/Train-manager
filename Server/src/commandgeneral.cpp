@@ -1,22 +1,26 @@
 #include "pc.h"
 #include <ctime>
-#include "communication/command.hpp"
+#include "communication/commandgeneral.hpp"
 #include "utils/wordoperation.hpp"
 #include "utils/time.hpp"
 
-pugi::xml_document Command::doc{};
-std::unordered_set<std::string> Command::cityNames;
-std::unordered_set<std::string> Command::trainNumbers;
-std::mutex Command::m;
+#include "commands/help.hpp"
+#include "commands/today.hpp"
 
-Command::Command(const std::string &str)
+pugi::xml_document CommandGeneral::doc{};
+std::unordered_set<std::string> CommandGeneral::cityNames;
+std::unordered_set<std::string> CommandGeneral::trainNumbers;
+std::mutex CommandGeneral::m;
+Command *CommandGeneral::icmd;
+
+CommandGeneral::CommandGeneral(const std::string &str)
 {
     if (str == "")
         return;
 
     std::string trimmed = WordOperation::trim(str);
 
-    char *cstr = new char[trimmed.size() + 1];
+    char *cstr = new char[trimmed.size() + 1]{};
     trimmed.copy(cstr, trimmed.size());
     const char *delim = " ,;'?";
     char *ptr = strtok(cstr, delim);
@@ -28,7 +32,7 @@ Command::Command(const std::string &str)
     delete[] cstr;
 }
 
-Command::CommandTypes Command::validate()
+CommandGeneral::CommandTypes CommandGeneral::validate()
 {
     std::transform(command[0].begin(), command[0].end(), command[0].begin(),
                    tolower);
@@ -51,7 +55,7 @@ Command::CommandTypes Command::validate()
     return CommandTypes::NOT_FOUND;
 }
 
-std::string Command::execute()
+std::string CommandGeneral::execute()
 {
     if (command.size() == 0)
         return "";
@@ -59,6 +63,7 @@ std::string Command::execute()
     try
     {
         auto cmd = commands.at(command[0]);
+        std::string out;
 
         switch (validate())
         {
@@ -74,7 +79,11 @@ std::string Command::execute()
             return "Command " + command[0] + " not found";
 
         case CommandTypes::TODAY:
-            return today();
+            icmd = new Today();
+            icmd->setCommand(&command);
+            out = icmd->execute();
+            delete icmd;
+            return out;
         case CommandTypes::DEPARTURES:
             return departures();
         case CommandTypes::ARRIVALS:
@@ -82,7 +91,11 @@ std::string Command::execute()
         case CommandTypes::LATE:
             return late();
         case CommandTypes::HELP:
-            return help();
+            icmd = new Help();
+            icmd->setCommand(&command);
+            out = icmd->execute();
+            delete icmd;
+            return out;
 
         default:
             LOG_DEBUG("Unexpected command " + command[0]);
@@ -95,62 +108,7 @@ std::string Command::execute()
     }
 }
 
-std::string Command::today()
-{
-    if (command[1] == command[2])
-        return "Please enter different start and destinations";
-
-    auto trenuri = doc.child("XmlIf").child("XmlMts").child("Mt").child("Trenuri").children();
-
-    std::unordered_set<std::string> startVec, destVec;
-    try
-    {
-        auto [start, dest] = splitNames();
-        startVec = start;
-        destVec = dest;
-    }
-    catch (const SearchNotRefined &e)
-    {
-        return "Please refine your search";
-    }
-
-    if (startVec.empty() || destVec.empty())
-        return "Did not match start or destination city";
-
-    std::vector<Train> unsorted;
-    for (const auto &tren : trenuri)
-    {
-        auto trasa = tren.child("Trase").child("Trasa").children();
-        pugi::xml_node startNode, destNode;
-        Stations stations;
-        for (const auto &element : trasa)
-        {
-            std::string testStart = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
-            std::string testDest = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
-
-            if (startVec.contains(testStart))
-                startNode = element;
-            if (!startNode.empty())
-                stations.push_back(element);
-
-            if (destVec.contains(testDest))
-            {
-                destNode = element;
-                if (!stations.empty())
-                    stations.pop_back();
-                break;
-            }
-        }
-
-        if (!stations.empty() && !destNode.empty())
-            unsorted.push_back({tren, stations});
-    }
-
-    Command::sort(unsorted);
-    return getVerbose(unsorted) + "\n" + getBrief(unsorted);
-}
-
-std::unordered_set<std::string> Command::match(const std::string &str, FindBy criteria)
+std::unordered_set<std::string> CommandGeneral::match(const std::string &str, FindBy criteria)
 {
     assert(criteria == FindBy::CITY || criteria == FindBy::TRAIN);
 #ifndef FIND_THRESHOLD
@@ -173,7 +131,7 @@ std::unordered_set<std::string> Command::match(const std::string &str, FindBy cr
     return out;
 }
 
-std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> Command::splitNames()
+std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> CommandGeneral::splitNames()
 {
     const unsigned MIN_LENGTH_THRESHOLD = 3;
     for (size_t i = 1; i < command.size() - 1; i++)
@@ -196,7 +154,7 @@ std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> Comm
     return {};
 }
 
-std::string Command::findByCity(const std::string &timeType)
+std::string CommandGeneral::findByCity(const std::string &timeType)
 {
     assert(timeType == OraS || timeType == OraP);
     std::string wholeCity;
@@ -256,7 +214,7 @@ std::string Command::findByCity(const std::string &timeType)
     return getBrief(stations, false, timeType == std::string(OraS));
 }
 
-unsigned Command::extractTime(const std::string &str)
+unsigned CommandGeneral::extractTime(const std::string &str)
 {
     if (str.find('-') != -1lu)
         return -1u;
@@ -298,17 +256,17 @@ unsigned Command::extractTime(const std::string &str)
     return hours * 3600 + minutes * 60 + seconds;
 }
 
-std::string Command::arrivals()
+std::string CommandGeneral::arrivals()
 {
     return findByCity(OraS);
 }
 
-std::string Command::departures()
+std::string CommandGeneral::departures()
 {
     return findByCity(OraP);
 }
 
-std::string Command::late()
+std::string CommandGeneral::late()
 {
     std::string trainName;
     for (size_t i = 1; i < command.size() - 1; i++)
@@ -341,104 +299,7 @@ std::string Command::late()
     return "Found no train name or number";
 }
 
-std::string Command::help()
-{
-    if (command.size() == 1)
-        return "Supported commands:\n\
-\ttoday [start] [dest] (get today's trains schedules from [start] to [dest])\n\
-\tdepartures [start] [delta] (get the departures from [start] in the upcoming\
- hour, if delta is specified, it will get the departures in the upcoming delta\
- minutes)\n\
-\tarrivals [dest] [delta] (get the arrivals to [dest] in the upcoming hour, if\
- delta is specified, it will get the departures in the upcoming delta minutes)\
-\n\tquit (close the connection)\n\
-\nhelp [command] (get more detailed help about a command)";
-
-    if (commands.find(command[1]) == commands.end())
-        return "Command " + command[1] + " not found";
-
-    auto cmd = commands.at(command[1]);
-    switch (cmd.type)
-    {
-    case CommandTypes::TODAY:
-        return "The today command returns all trains from a starting point to \
-an end point.\nIt has " +
-               Types::toString<int>(cmd.mandatory) + " mandatory arguments \
-(at least a starting and destination city are needed). City names are \
-automatically detected, there is no need to separate them, for example\n\t\
-today cluj napoca iasi\nwill return all trains from cluj napoca to iasi.";
-
-    case CommandTypes::DEPARTURES:
-        return "The departures command returns all departures from a starting \
-point in the next delta minutes.\nIt has " +
-               Types::toString<int>(cmd.mandatory) +
-               " mandatory arguments (a starting city and a time in minutes). \
-You can either use numbers for seconds or literals for more accurate queries. \
-The accepted literals are \"s\", \"m\", \"h\" for seconds, minutes, hours \
-respectively. Example usage:\n\tdepartures iasi 10m\nwill return the trains \
-that depart from iasi in the following 10 minutes.";
-
-    case CommandTypes::ARRIVALS:
-        return "The arrivals command returns all arrivals from a starting \
-point in the next delta minutes.\nIt has " +
-               Types::toString<int>(cmd.mandatory) +
-               " mandatory arguments (a starting city and a time in minutes). \
-Example usage:\n\tarrivals iasi 15\nwill return the trains that arrive in iasi \
-in the following 15 minutes.";
-
-    case CommandTypes::LATE:
-        return "Not yet implemented";
-
-    case CommandTypes::HELP:
-        return "Why would you need help about a help command?";
-
-    default:
-        LOG_DEBUG("Unexpected " + command[1] + " type: " + Types::toString<unsigned>(unsigned(cmd.type)));
-        return "Try again";
-    }
-}
-
-std::string Command::motd()
-{
-    time_t now = ::time(0);
-    tm *ltm = localtime(&now);
-
-    char buff[128], weekDay[12];
-    switch (ltm->tm_wday)
-    {
-    case 1:
-        strcpy(weekDay, "Monday");
-        break;
-    case 2:
-        strcpy(weekDay, "Tuesday");
-        break;
-    case 3:
-        strcpy(weekDay, "Wednesday");
-        break;
-    case 4:
-        strcpy(weekDay, "Thursday");
-        break;
-    case 5:
-        strcpy(weekDay, "Friday");
-        break;
-    case 6:
-        strcpy(weekDay, "Saturday");
-        break;
-    case 0:
-        strcpy(weekDay, "Sunday");
-        break;
-    default:
-        strcpy(weekDay, "???");
-        break;
-    }
-    sprintf(buff, "---Welcome to Train Manager---\n\
-Today is %d/%d/%d(%s)",
-            ltm->tm_mday, ltm->tm_mon + 1, ltm->tm_year + 1900, weekDay);
-
-    return buff;
-}
-
-void Command::getFile()
+void CommandGeneral::getFile()
 {
     const std::string localPath = "resources/cfr_2021.xml";
     const std::string web = "https://data.gov.ro/dataset/c4f71dbb-de39-49b2-b697-5b60a5f299a2/resource/5af0366b-f9cb-4d6e-991b-e91789fc7d2c/download/sntfc-cfr-cltori-s.a.-1232-trenuri_2021.xml ";
@@ -479,9 +340,10 @@ void Command::getFile()
 
     for (const auto &ele : tmpCities)
         cityNames.insert(WordOperation::removeDiacritics(ele));
+    icmd->init(&doc, &cityNames, &trainNumbers);
 }
 
-std::string Command::getVerbose(const std::vector<Train> &obj)
+std::string CommandGeneral::getVerbose(const std::vector<Train> &obj)
 {
     std::string out;
     unsigned index = 0;
@@ -530,7 +392,7 @@ std::string Command::getVerbose(const std::vector<Train> &obj)
     return "Found " + Types::toString<unsigned>(index) + " trains:\n" + out;
 }
 
-std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim, bool reverse)
+std::string CommandGeneral::getBrief(const std::vector<Train> &obj, bool needDelim, bool reverse)
 {
     std::string out;
     unsigned index = 0;
@@ -574,7 +436,7 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim, boo
            info + out;
 }
 
-void Command::sort(std::vector<Train> &obj)
+void CommandGeneral::sort(std::vector<Train> &obj)
 {
     std::sort(obj.begin(), obj.end(), [](const Train &left, const Train &right)
               { return left.st.front().attribute("OraP").as_uint() < right.st.front().attribute("OraP").as_uint(); });

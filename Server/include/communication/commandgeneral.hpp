@@ -2,18 +2,19 @@
 
 #include "pc.h"
 #include <unordered_set>
-#include <xml/pugixml.hpp>
+#include "commands/command.hpp"
 
-class Command
+class CommandGeneral
 {
 public:
+    static Command *icmd;
     /**
      * @brief Constructs a new Command object, trims it and appends the
      * arguments to the command vector
      *
      * \param str String input from user (exactly as sent)
      */
-    Command(const std::string &str);
+    CommandGeneral(const std::string &str);
 
     /**
      * @brief Actually execute the command
@@ -22,30 +23,8 @@ public:
      */
     std::string execute();
 
-    /**
-     * @brief Get a message that is only sent to clients when they connect to
-     * the server, must be static to be used by client thread
-     *
-     * \return Message of the day
-     */
-    static std::string motd();
     friend class Connection;
-    /**
-     * @brief Get all trains from [start] to [destination], where
-     * start == command[1] and end == command[2] after being parsed by
-     * execute()
-     *
-     * \return String containing the start and destination times of the trains
-     */
-    std::string today();
 
-    /**
-     * @brief Command used to print information about all available commands
-     *
-     * \return All available commands including fixed and optional arguments
-     * and their description
-     */
-    std::string help();
     std::string arrivals();
     std::string departures();
     std::string late();

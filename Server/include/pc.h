@@ -23,5 +23,8 @@
 
 #include "utils/exceptions.hpp"
 #include "utils/logger.hpp"
+#include "utils/time.hpp"
 #include "utils/types.hpp"
+#include "utils/wordoperation.hpp"
+
 #include <xml/pugixml.hpp>
