@@ -1,6 +1,11 @@
 #include "pc.h"
 #include "departures.hpp"
 
+Departures::Departures(const Command *other, const std::vector<std::string> *command)
+    : Command(other, command)
+{
+}
+
 std::string Departures::execute()
 {
     std::string wholeCity;
@@ -38,9 +43,13 @@ std::string Departures::execute()
             std::string start = WordOperation::removeDiacritics(element.attribute(staOrig).as_string());
             std::string dest = WordOperation::removeDiacritics(element.attribute(staDest).as_string());
 
-            if (matching.contains(start) &&
-                Time::isBetween(Time::current(), timeStamp, Time::current() + delta))
-                startNode = element;
+            if (matching.contains(start))
+            {
+                if (Time::isBetween(Time::current(), timeStamp, Time::current() + delta) ||
+                    (Time::current() + delta >= Time::SECONDS_IN_DAY &&
+                     Time::isBetween(0, timeStamp, Time::current() + delta - Time::SECONDS_IN_DAY)))
+                    startNode = element;
+            }
 
             if (!startNode.empty() && start != dest && dest != "")
             {

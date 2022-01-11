@@ -1,6 +1,11 @@
 #include "pc.h"
 #include "arrivals.hpp"
 
+Arrivals::Arrivals(const Command *other, const std::vector<std::string> *command)
+    : Command(other, command)
+{
+}
+
 std::string Arrivals::execute()
 {
     std::string wholeCity;
@@ -40,11 +45,15 @@ std::string Arrivals::execute()
             std::string dest = WordOperation::removeDiacritics(element.attribute(staDest).as_string());
 
             stations.push_back(element);
-            if (matching.contains(dest) &&
-                Time::isBetween(Time::current(), timeStamp, Time::current() + delta))
+            if (matching.contains(dest))
             {
-                found = true;
-                break;
+                if (Time::isBetween(Time::current(), timeStamp, Time::current() + delta) ||
+                    (Time::current() + delta >= Time::SECONDS_IN_DAY &&
+                     Time::isBetween(0, timeStamp, Time::current() + delta - Time::SECONDS_IN_DAY)))
+                {
+                    found = true;
+                    break;
+                }
             }
         }
         if (found)
