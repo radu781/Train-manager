@@ -96,7 +96,15 @@ void Connection::send(const std::string &str)
             break;
         }
 
-        IOManager::send(serverFD, buff);
+        try
+        {
+            IOManager::send(serverFD, buff);
+        }
+        catch (const std::runtime_error &e)
+        {
+            std::cout << "The message was not sent successfully and the server \
+might not what to do with your input, please try again";
+        }
     }
 }
 

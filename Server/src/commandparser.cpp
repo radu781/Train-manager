@@ -5,13 +5,14 @@
 #include "commands/help.hpp"
 #include "commands/late.hpp"
 #include "commands/today.hpp"
+#include "communication/client.hpp"
 
 pugi::xml_document CommandParser::doc{};
 std::unordered_set<std::string> CommandParser::cityNames;
 std::unordered_set<std::string> CommandParser::trainNumbers;
 std::mutex CommandParser::m;
-Command *CommandParser::icmd;
-const std::unordered_map<std::string, CommandParser::Args> CommandParser::commands = {
+Command *CommandParser::sharedCmd = nullptr;
+const std::unordered_map<std::string, CommandParser::Args> CommandParser::commandRules = {
     {"today", {2, -1u, CommandTypes::TODAY}},
     {"departures", {2, -1u, CommandTypes::DEPARTURES}},
     {"arrivals", {2, -1u, CommandTypes::ARRIVALS}},
@@ -43,9 +44,9 @@ CommandParser::CommandTypes CommandParser::validate()
     std::transform(command[0].begin(), command[0].end(), command[0].begin(),
                    tolower);
 
-    if (commands.contains(command[0]))
+    if (commandRules.contains(command[0]))
     {
-        Args pos = commands.at(command[0]);
+        Args pos = commandRules.at(command[0]);
 
         if (command.size() - 1 < pos.mandatory)
             return CommandTypes::NOT_ENOUGH_ARGS;
@@ -61,15 +62,16 @@ CommandParser::CommandTypes CommandParser::validate()
     return CommandTypes::NOT_FOUND;
 }
 
-std::string CommandParser::execute()
+std::string CommandParser::execute(Client *client)
 {
     if (command.size() == 0)
         return "";
 
     try
     {
-        auto cmd = commands.at(command[0]);
+        auto cmd = commandRules.at(command[0]);
         std::string out;
+        Command *icmd = client->cmd;
 
         switch (validate())
         {
@@ -85,36 +87,31 @@ std::string CommandParser::execute()
             return "Command " + command[0] + " not found";
 
         case CommandTypes::TODAY:
-            icmd = new Today();
-            icmd->setCommand(&command);
+            icmd = new Today(CommandParser::sharedCmd, &command);
             out = icmd->execute();
             delete icmd;
             return out;
 
         case CommandTypes::DEPARTURES:
-            icmd = new Departures();
-            icmd->setCommand(&command);
+            icmd = new Departures(CommandParser::sharedCmd, &command);
             out = icmd->execute();
             delete icmd;
             return out;
 
         case CommandTypes::ARRIVALS:
-            icmd = new Arrivals();
-            icmd->setCommand(&command);
+            icmd = new Arrivals(CommandParser::sharedCmd, &command);
             out = icmd->execute();
             delete icmd;
             return out;
 
         case CommandTypes::LATE:
-            icmd = new Late();
-            icmd->setCommand(&command);
+            icmd = new Late(CommandParser::sharedCmd, &command);
             out = icmd->execute();
             delete icmd;
             return out;
 
         case CommandTypes::HELP:
-            icmd = new Help();
-            icmd->setCommand(&command);
+            icmd = new Help(CommandParser::sharedCmd, &command);
             out = icmd->execute();
             delete icmd;
             return out;
@@ -124,7 +121,7 @@ std::string CommandParser::execute()
             return "Try again";
         }
     }
-    catch (const std::out_of_range &e) // caused by the commands.at()
+    catch (const std::out_of_range &e) // caused by the commandRules.at()
     {
         return "Command " + command[0] + " not found";
     }
@@ -138,7 +135,7 @@ void CommandParser::getFile()
 
     if (!std::filesystem::exists(localPath))
     {
-        std::lock_guard<std::mutex> lock(m);
+        std::scoped_lock<std::mutex> lock(m);
 
         LOG_DEBUG("Xml does not exist locally, attempting to download");
         if (!std::filesystem::exists("resources/"))
@@ -172,5 +169,5 @@ void CommandParser::getFile()
     for (const auto &ele : tmpCities)
         cityNames.insert(WordOperation::removeDiacritics(ele));
 
-    icmd->init(&doc, &cityNames, &trainNumbers);
+    sharedCmd->init(&doc, &cityNames, &trainNumbers);
 }

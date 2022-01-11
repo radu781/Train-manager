@@ -6,6 +6,18 @@ std::unordered_set<std::string> *Command::cityNames;
 std::unordered_set<std::string> *Command::trainNumbers;
 std::mutex Command::m;
 
+Command::Command()
+{
+}
+
+Command::Command(const Command *other, const std::vector<std::string> *command)
+    : command(command)
+{
+    doc = other->doc;
+    cityNames = other->cityNames;
+    trainNumbers = other->trainNumbers;
+}
+
 void Command::setCommand(std::vector<std::string> *command)
 {
     this->command = command;
@@ -126,6 +138,8 @@ std::string Command::getBrief(const std::vector<Train> &obj, bool needDelim)
         return "";
 
     const std::string info = LPAD("Number", 10) + LPAD("Depart", 15) + LPAD("Arrival", 11) + LPAD("Time", 5) + "\n";
+    if (!needDelim)
+        return info + out;
     if (!availableTrains)
         return "No trains available at this time\n" + info + out;
     return (needDelim
@@ -164,7 +178,6 @@ unsigned Command::extractTime(const std::string &str)
          last = next + 1, next = str.find_first_of(literals, last))
     {
         std::string ele = str.substr(last, next - last);
-        LOG_DEBUG(ele);
 
         switch (str[next])
         {

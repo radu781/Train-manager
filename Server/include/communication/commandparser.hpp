@@ -2,11 +2,12 @@
 
 #include "pc.h"
 #include "commands/command.hpp"
+#include "communication/client.hpp"
 
 class CommandParser
 {
 public:
-    static Command *icmd;
+    static Command *sharedCmd;
     /**
      * @brief Constructs a new Command object, trims it and appends the
      * arguments to the command vector
@@ -20,7 +21,7 @@ public:
      *
      * \return Execution output, both if the command if valid or not
      */
-    std::string execute();
+    std::string execute(Client *client);
 
 private:
     enum class CommandTypes;
@@ -80,7 +81,7 @@ private:
     };
 
     friend class Help;
-    static const std::unordered_map<std::string, Args> commands;
+    static const std::unordered_map<std::string, Args> commandRules;
 
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
     static constexpr const char *CatTren = "CategorieTren", *Numar = "Numar";

@@ -1,6 +1,10 @@
 #include "pc.h"
 #include "today.hpp"
-#include "utils/wordoperation.hpp"
+
+Today::Today(const Command *other, const std::vector<std::string> *command)
+    : Command(other, command)
+{
+}
 
 std::string Today::execute()
 {

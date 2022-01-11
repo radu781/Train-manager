@@ -90,11 +90,11 @@ possible cause: Address already in use");
 
 void Connection::closeConnection(Client *client)
 {
-    std::lock_guard<std::mutex> lock(m);
+    std::scoped_lock<std::mutex> lock(m);
     close(client->getSock());
     client->isConnected = false;
     if (client->getSock()) // set to 0 when server gets SIGINT
-        LOG_COMMUNICATION("[Lost connection]", false, client->getSock());
+        LOG_COMMUNICATION(std::string("[Lost connection] IP: ") + client->getIP(), false, client->getSock());
 
     clients.erase(client->getSock());
     delete client;
@@ -102,6 +102,7 @@ void Connection::closeConnection(Client *client)
 
 void Connection::makeThreads()
 {
+    std::scoped_lock<std::mutex> lock(m);
     LOG_DEBUG(Types::toString<size_t>(prethreadCount) + " Threads reinit");
     for (size_t i = 0, j = 0; i < prethreadCount; i++)
     {
@@ -119,7 +120,6 @@ void Connection::runIndividual(Client *client)
     // sender.join();
     if (!client->isConnected)
     {
-        std::lock_guard<std::mutex> lock(m);
         LOG_DEBUG("Client erased");
         if (clients.size() < prethreadCount / 5)
             makeThreads();
@@ -132,9 +132,17 @@ Client *Connection::acceptIndividual(sockaddr_in addr, int socket)
     if (client->accept() < 0)
         throw ConnectionException("Could not accept");
 
-    LOG_COMMUNICATION(std::string("[Client accepted]") + client->getIP(), false, client->getSock());
+    LOG_COMMUNICATION(std::string("[Client accepted] IP: ") + client->getIP(), false, client->getSock());
     client->cmd = new Motd();
-    IOManager::send(client, client->cmd->execute());
+    try
+    {
+        IOManager::send(client, client->cmd->execute());
+    }
+    catch (const std::runtime_error &e)
+    {
+        LOG_DEBUG("Motd was not sent successfully");
+    }
+
     delete client->cmd;
     return client;
 }
@@ -143,7 +151,15 @@ void Connection::sendIndividual(Client *client, const std::string &str)
 {
     if (client->isConnected)
     {
-        IOManager::send(client, str);
+        try
+        {
+            IOManager::send(client, str);
+        }
+        catch (const std::exception &e)
+        {
+            LOG_DEBUG("Message was not sent successfully");
+        }
+
         // std::this_thread::sleep_for(std::chrono::seconds(2));
     }
 }
@@ -154,6 +170,6 @@ void Connection::readIndividual(Client *client)
     {
         std::string fromClient = IOManager::read(client);
         CommandParser cmd(fromClient);
-        sendIndividual(client, cmd.execute());
+        sendIndividual(client, cmd.execute(client));
     }
 }

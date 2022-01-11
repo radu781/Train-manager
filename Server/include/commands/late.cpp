@@ -1,6 +1,11 @@
 #include "pc.h"
 #include "late.hpp"
 
+Late::Late(const Command *other, const std::vector<std::string> *command)
+    : Command(other, command)
+{
+}
+
 std::string Late::execute()
 {
     std::string trainName;

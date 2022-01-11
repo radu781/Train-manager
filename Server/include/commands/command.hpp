@@ -8,6 +8,9 @@ public:
     virtual std::string execute() = 0;
     virtual std::string undo() = 0;
 
+    Command();
+    Command(const Command *other, const std::vector<std::string> *command);
+
     void setCommand(std::vector<std::string> *command);
     void init(pugi::xml_document *doc, std::unordered_set<std::string> *cities,
               std::unordered_set<std::string> *trains);
@@ -54,7 +57,7 @@ protected:
 
     static std::mutex m;
 
-    std::vector<std::string> *command;
+    const std::vector<std::string> *command;
 
     static constexpr const char *OraS = "OraS", *OraP = "OraP";
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";

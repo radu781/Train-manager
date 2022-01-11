@@ -1,6 +1,11 @@
 #include "help.hpp"
 #include "communication/commandparser.hpp"
 
+Help::Help(const Command *other, const std::vector<std::string> *command)
+    : Command(other, command)
+{
+}
+
 std::string Help::execute()
 {
     if (command->size() == 1)
@@ -14,10 +19,10 @@ std::string Help::execute()
 \n\tquit (close the connection)\n\
 \nhelp [command] (get more detailed help about a command)";
 
-    if (CommandParser::commands.find(command->at(1)) == CommandParser::commands.end())
+    if (CommandParser::commandRules.find(command->at(1)) == CommandParser::commandRules.end())
         return "Command " + command->at(1) + " not found";
 
-    auto cmd = CommandParser::commands.at(command->at(1));
+    auto cmd = CommandParser::commandRules.at(command->at(1));
     switch (cmd.type)
     {
     case CommandParser::CommandTypes::TODAY:
