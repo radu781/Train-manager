@@ -6,8 +6,8 @@ It simulates a real life Client-Server architecture, where the clients request d
 The clients send commands to the server.
 Currently supported commands:
 - `today`: information about the current day's trains schedule
-- `departures`: information about departures in the upcoming hour, including trains that are late
-- `arrivals`: information about arrivals in the upcoming hour, including trains that are late
+- `departures`: information about departures in the upcoming delta time
+- `arrivals`: information about arrivals in the upcoming delta time
 
 Commands to be added:
 - `late`: lets a user signal that a train is being late, future calls to `departures` or `arrivals` will reflect this change
@@ -23,7 +23,7 @@ This is a multi-threaded application where:
 
 ### Requirements
 For Client and Server instances:
-- g++ version 9.3.0
+- g++ version 9.3.0 (I used c++ standard 20, but 17 should work fine)
 - make version 4.2.1
 - any unix system
 
@@ -35,9 +35,11 @@ cd Train-manager
 # This will use all debug optimizations
 make
 
+# Run this in a terminal
 cd Server
-./Server/bin/main
+bin/main
+
 # Run this in a different terminal
-cd ../Client
-./Client/bin/main
+cd Client
+bin/main
 ```
