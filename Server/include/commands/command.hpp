@@ -28,7 +28,7 @@ protected:
      *
      * \param str String to be searched for in the string. Substrings are
      * considered valid too
-     * \return Vector of all matches
+     * \return Unordered set of all matches
      */
     static std::unordered_set<std::string> match(const std::string &str, FindBy criteria);
     unsigned extractTime(const std::string &str);
@@ -63,4 +63,6 @@ protected:
     static constexpr const char *staOrig = "DenStaOrigine", *staDest = "DenStaDestinatie";
     static constexpr const char *trainOk = "[o] ", *trainNOk = "[x] ";
     static constexpr const char *CatTren = "CategorieTren", *Numar = "Numar";
+
+    static constexpr const char *cannotUndo = "Nothing to undo here, this command only prints information";
 };

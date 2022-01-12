@@ -18,16 +18,16 @@
                 that simulates a real life Client-Server architecture. An .xml file is used as a database.
             </p>
             <p>
-                <span class="highlight">Keywords</span> Concurrent &middot; Threads &middot; Server.
+                <span class="highlight">Keywords</span> Concurrent server &middot; Threads &middot; Command pattern
+            </p>
         </h3>
-        </p>
         </h1>
     </div>
 
     <div class="main">
         <!-- chapters -->
         <div class="left">
-            <h3>Summary</h3>
+            <h3>Table of contents</h3>
             <ol>
                 <li><a href="#Introduction" class="category">Introduction</a> </li>
                 <li>
@@ -101,7 +101,8 @@
                     an <span class="code">.xml</span> file (as this is how Cfr Călători stores their data) so an <a
                         href="#pugi" class="internallink">xml parser</a> was used. Additional information (more in depth
                     code details) about classes, class methods
-                    and members can be found in the project's source files as Doxygen comments.
+                    and members can be found in the project's source files as Doxygen comments. <i>(Disclosure: code
+                        snippets in this documentation may not be up to date)</i>
                 </p>
             </div>
 
@@ -202,27 +203,27 @@
                                                 + 1, RETRY_ATTEMPTS, seconds); <br>
                                                 <a class="tab"></a>
                                                 <a class="tab"></a>
-                                                <a class="tab"></a>std::cout << buf << std::flush; <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>bar.update(seconds); <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>} <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>else <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>{ <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>connected = true; <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>return; <br>
-                                                    <a class="tab"></a>
-                                                    <a class="tab"></a>} <br><br>
-                                                    <a class="tab"></a>throw ConnectionException("Server connection
-                                                    error");<br>
-                                                    }
+                                                <a class="tab"></a>std::cout &lt;&lt; buf &lt;&lt; std::flush; <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>bar.update(seconds); <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>} <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>else <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>{ <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>connected = true; <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>return; <br>
+                                                <a class="tab"></a>
+                                                <a class="tab"></a>} <br><br>
+                                                <a class="tab"></a>throw ConnectionException("Server connection
+                                                error");<br>
+                                                }
                             </span>
                         </div>
                     </div>
@@ -281,12 +282,12 @@
                                     to port
                                     (bind)");
                                     <br>
-                                    <a class="tab"></a>if(listen(socketFD, 3) < 0) <br>
-                                        <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not
-                                        listen
-                                        from the server!");
-                                        <br>
-                                        }
+                                    <a class="tab"></a>if(listen(socketFD, 3) &lt; 0) <br>
+                                    <a class="tab"></a><a class="tab"></a>throw ConnectionException("Could not
+                                    listen
+                                    from the server!");
+                                    <br>
+                                    }
                             </span>
                         </div>
                     </div>
@@ -296,11 +297,10 @@
                         an unordered map. This thread is equivalent
                         to the main thread, upon finishing its execution (which may only occur in the case of an
                         uncaught exception) it closes the server (realistically this will never happen). The server will
-                        (currently) only send data when requested,
-                        an announcement system that broadcasts a message will soon be implemented. For each client the
-                        <span class="code">runIndividual()</span> method is called that creates a reader thread, while
-                        the main thread will delete the client entry in the unordered map upon disconnection (see <a
-                            href="#conenctionloss" class="internallink"> Connection loss</a>).
+                        only send data when requested. For each client the <span class="code">runIndividual()</span>
+                        method is called that creates a reader thread, while the main thread will delete the client
+                        entry in the unordered map upon disconnection (see <a href="#conenctionloss"
+                            class="internallink"> Connection loss</a>).
                     </p>
                     <p>
                         <span id="implservercomm" class="highlight">Communication</span> Sending and reading data is the
@@ -315,7 +315,7 @@
                         that find station names also accept partial
                         and close matches (by using <a href="https://en.wikipedia.org/wiki/Levenshtein_distance"
                             class="externallink">Levenshtein
-                            distance</a>), however exact matches are prioritised. Find functions return multiple match
+                            distance</a>), however exact matches are prioritized. Find functions return multiple match
                         values like a real life search bar. For example, "cluj" will find the train stations "cluj
                         napoca", "cluj napoca est" and "iaai" will
                         find "iasi".
@@ -390,11 +390,11 @@
                             <td class="digit">2<br>(city names)</td>
                             <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
                             </td>
-                            <td>prints the arrival and destination times of trains in given stations<br>it first prints
-                                a verbose result (all intermediary stations and time stamps) and a brief one (only start
-                                and destination stations with their respective
-                                time stamps) that is omitted if there are no intermediary stations (see
-                                <a href="#impluses" class="internallink">Use cases</a>)
+                            <td>Prints the arrival and destination times of trains in given stations<br>It first prints
+                                a verbose result (all intermediary stations and time stamps) and then a brief one (only
+                                start and destination stations with their respective time stamps) that is omitted if
+                                there are no intermediary stations (see <a href="#impluses" class="internallink">Use
+                                    cases</a>)
                             </td>
                         </tr>
                         <tr>
@@ -403,8 +403,10 @@
                                             class="internallink">3</a></b></sup>)</td>
                             <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
                             </td>
-                            <td>prints the trains that depart from the given station in the upcoming delta<sup><b><a
+                            <td>Prints the trains that depart from the given station in the upcoming delta<sup><b><a
                                             href="#protocoldelta" class="internallink">3</a></b></sup> time
+                                <br>Similarly to <span class="code">today</span>, two results are printed: a
+                                verbose and a brief one
                             </td>
                         </tr>
                         <tr>
@@ -413,8 +415,10 @@
                                             class="internallink">3</a></b></sup>)</td>
                             <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
                             </td>
-                            <td>prints the trains that arrive at the given station in the upcoming delta<sup><b><a
-                                            href="#protocoldelta" class="internallink">3</a></b></sup> time
+                            <td>Prints the trains that arrive at the given station in the upcoming delta<sup><b><a
+                                            href="#protocoldelta" class="internallink">3</a></b></sup>
+                                time<br>Similarly to <span class="code">today</span>, two results are printed: a
+                                verbose and a brief one
                             </td>
                         </tr>
                         <tr>
@@ -423,7 +427,7 @@
                                             class="internallink">3</a></b></sup>)</td>
                             <td class="digit">any<sup><b><a href="#protocolany" class="internallink">2</a></b></sup>
                             </td>
-                            <td>proposes a delay for a given train, future calls to <span class="code">today</span>,
+                            <td>Proposes a delay for a given train, future calls to <span class="code">today</span>,
                                 <span class="code">departures</span> and <span class="code">arrivals</span> will be
                                 altered
                             </td>
@@ -432,18 +436,20 @@
                             <td><span class="code">help</span></td>
                             <td class="digit">0</td>
                             <td class="digit">1<br>(specific command)</td>
-                            <td>prints general help information or specific to a command</td>
+                            <td>Prints general help information or specific to a command</td>
                         </tr>
                         <tr>
                             <td><span class="code">quit</span></td>
                             <td class="digit">0</td>
                             <td class="digit">0</td>
-                            <td>shuts down the client connection, this command doesn't reach the server</td>
+                            <td>Shuts down the client connection, this command doesn't reach the server</td>
                         </tr>
 
                     </table>
                     <p>
-                        <sup id="args"><b>1</b></sup>An argument is a word separated by at least one space character.
+                        <sup id="args"><b>1</b></sup>An argument is a word separated by at least one space character, or
+                        one of the following: <span class="code">,;'?</span>. The period (<span class="code">.</span>)
+                        is not a valid delimiter since some stations use this in their name.
                         <br>
                         <sup id="protocolany"><b>2</b></sup>City names can be longer than a single word, however partial
                         matches will return more results.<br>
@@ -464,20 +470,30 @@
                             class="internallink">File loading</a>). In case of total mismatch (no exact, partial or
                         close matches are found) the functions are considerably faster, having to only iterate over
                         &approx;
-                        1500 unique station names or &approx; 1200 unique train names instead of the whole xml
-                        (&approx;30.000 stations and &approx; 1200 trains). Of course, this adds unnecessary checks even
-                        though the station names might be correct,
-                        but this is only equal to <sup>1</sup>/<sub>60</sub> of the time to actually find the stations
-                        (yes, this was timed).
+                        1500 unique station names or &approx; 1200 unique train names, depending on the command issued,
+                        instead of the whole xml (&approx; 30.000 stations and &approx; 1200 trains). Of course, this
+                        adds unnecessary checks even though the station names might be correct, but this is only equal
+                        to <sup>1</sup>/<sub>60</sub> of the time to actually find the stations (yes, this was timed).
+                    </p>
+                    <p>
+                        Commands that are received by the server (all but <span class="code">quit</span>) are separate
+                        classes that implement the <a href="../Server/include/commands/command.hpp"
+                            class="filelink">Command</a> abstract class. These commands are not stand-alone, and require
+                        the data in the base class (pointers to data from <a
+                            href="../Server/include/communication/commandparser.hpp" class="filelink">CommandParser</a>,
+                        passed at initialization and some member functions). A better Command Pattern demonstration
+                        would have an interface as its base class, but since the commands are centered around the same
+                        data, it seemed better practice to share the functionality whenever needed.
                     </p>
                     </p>
                     <p>
                         <span id="implserverlog" class="highlight">Logging</span> Client to server and server to client
                         messages are logged, as well as debug related information such as: clients being accepted,
-                        restarted in order to keep fresh data and
-                        ignore past and unwanted information. Logging is thread safe and (purposefully) slow in order to
-                        log everything in case of crashes. Logging can be disabled by removing compile time defines (
-                        <span class="code">ENABLE_COMM_LOGGING</span> <span class="code">ENABLE_DEBG_LOGGING</span> in
+                        clients losing connection, inner server data changes: files being downloaded, memory usage, etc.
+                        The logger crates a text file on each run with the current time as its name and previous log
+                        files are archived. Logging is thread safe and (purposefully) slow in order to log everything in
+                        case of crashes, however it can be disabled by removing compile time defines (<span
+                            class="code">ENABLE_COMM_LOGGING</span>, <span class="code">ENABLE_DEBG_LOGGING</span> in
                         the server's root
                         <a href="../Server/Makefile" class="filelink">Makefile</a>).
                     </p>
@@ -517,7 +533,7 @@
                     </div>
                     <p></p>
                     <div class="code">
-                        <span class="hide">from <a href="../Server/src/iomanager.cpp"
+                        <span class="hide"><a href="../Server/src/iomanager.cpp"
                                 class="filelink">Server/src/iomanager.cpp</a></span>
                         <button id="button4" onclick="change(4)">Show code</button>
                         <div class="codefield" id='code4'>
@@ -538,13 +554,13 @@
                                 <a class="tab"></a>throw std::runtime_error("Padding not found");<br>
                                 <br>
                                 <a class="tab"></a>char length[BUFF_SIZE + 1]{};<br>
-                                <a class="tab"></a>for (int i = 0; i < paddingStart - str; i++)<br>
-                                    <a class="tab"></a>
-                                    <a class="tab"></a>length[i] = str[i];<br>
-                                    <br>
-                                    <a class="tab"></a>return {paddingStart + strlen(PADDING),
-                                    atoi(length)};<br>
-                                    }
+                                <a class="tab"></a>for (int i = 0; i &lt; paddingStart - str; i++)<br>
+                                <a class="tab"></a>
+                                <a class="tab"></a>length[i] = str[i];<br>
+                                <br>
+                                <a class="tab"></a>return {paddingStart + strlen(PADDING),
+                                atoi(length)};<br>
+                                }
                             </span>
                         </div>
                     </div>
@@ -559,11 +575,10 @@
                         different, an exception is thrown, however,
                         if the value returned by the system <span class="code">read()</span> or <span
                             class="code">write()</span> corresponds to an error, the connection is closed, assuming that
-                        the client or server has abruptly disconnected. <br> In
-                        case the client loses connection, the server will be unaffected, and able to accept other
-                        (including the same) clients. If the server shuts down, all clients' connections will be closed
-                        as no more data can be received. The
-                        <span class="code">read()</span> and <span class="code">write()</span> IOManager methods toggle
+                        the client or server has abruptly disconnected. In case the client loses connection, the server
+                        will be unaffected, and able to accept other (including the same) clients. If the server shuts
+                        down, all clients' connections will be closed as no more data can be received. The <span
+                            class="code">read()</span> and <span class="code">write()</span> IOManager methods toggle
                         the <span class="code">isConnected</span> client member variable if the connection is lost, thus
                         the <span class="code">runIndividual()</span> method can efficiently remove the client from the
                         clients map.
@@ -586,6 +601,8 @@
                                 <a class="tab"></a>clients.erase(client->sock); <br>
                                 <a class="tab"></a>
                                 <a class="tab"></a>LOG_DEBUG("Client erased"); <br>
+                                <a class="tab"></a><a class="tab"></a>if (clients.size() &lt; prethreadCount / 5)<br>
+                                <a class="tab"></a><a class="tab"></a><a class="tab"></a>makeThreads();<br>
                                 <a class="tab"></a>} <br>
                                 }
                             </span>
@@ -690,8 +707,12 @@
                             </div>
                         </div>
                         <li>
-                            <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find will
-                            cause the client to no longer be able to send commands (not really fixable). Thus, the
+                            <span id="casesbad" class="highlight">Bad client</span> The evil client tries to find
+                            exploits: by entering a command longer than the available buffer (of constant size), the
+                            command will be invalidated and the connection will be closed. Entering new lines or random
+                            unicode characters will do nothing. Entering EOF will cause the client to no longer be able
+                            to send commands. Sending a command that outputs Thus, the server will not crash due to user
+                            input.
                         </li>
                     </ul>
                     </p>
@@ -780,13 +801,11 @@
         left: 0;
         align-self: flex-start;
         padding-right: 5px;
-        padding-bottom: 50px;
+        padding-bottom: 20%;
         margin-right: 5px;
         border-right: 2px solid gray;
         background-color: #80808030;
     }
-
-    .main {}
 
     @media (max-width: 1000px) {
         .main {
@@ -905,6 +924,7 @@
     .code .codefield {
         visibility: hidden;
         height: 0;
+        display: none;
     }
 
     p~.code {
@@ -978,7 +998,7 @@
         }
 
         html {
-            margin: 30px
+            margin: 30px;
         }
     }
 </style>
@@ -995,15 +1015,15 @@
             buttons[index] = true;
             button.innerHTML = "Hide code";
 
-            code.style = "visibility: visible; height: auto; background-color: rgb(224, 224, 224);";
-            codefield.style = "visibility: visible; height: auto;;";
+            code.style = "visibility: visible; height: auto; background-color: rgb(224, 224, 224); display: block;";
+            codefield.style = "visibility: visible; height: auto; display: block;";
         }
         else {
             buttons[index] = false;
             button.innerHTML = "Show code";
 
-            code.style = "visibility: hidden; height: 0";
-            codefield.style = "visibility: hidden; height: 0;";
+            code.style = "visibility: hidden; height: 0; display: none";
+            codefield.style = "visibility: hidden; height: 0; display: none";
         }
     }
 

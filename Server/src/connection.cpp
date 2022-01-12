@@ -31,7 +31,7 @@ void Connection::run()
     std::thread setup(Connection::setup);
     setup.join();
 
-    LOG_DEBUG("all joined, server closing");
+    LOG_DEBUG("All threads joined, server closing");
 }
 
 void Connection::setup()
@@ -115,9 +115,7 @@ void Connection::makeThreads()
 void Connection::runIndividual(Client *client)
 {
     std::thread reader(readIndividual, client);
-    // std::thread sender(sendIndividual, client, "hello");
     reader.join();
-    // sender.join();
     if (!client->isConnected)
     {
         LOG_DEBUG("Client erased");
