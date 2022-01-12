@@ -13,33 +13,76 @@ std::string Late::execute()
         trainName += command->at(1) + " ";
     trainName = WordOperation::removeDiacritics(trainName);
 
-    auto nameFind = match(trainName, FindBy::CITY);
-    if (nameFind.size() == 1)
-        return "Found train name: " + trainName;
-    if (nameFind.size() > 1)
+    unsigned delta = extractTime(command->back());
+    std::string deltaStr = Types::toString<unsigned>(delta / 60);
+
+    auto [res, set] = find(trainName);
+    std::string out;
+    switch (res)
     {
-        std::string out;
-        for (const auto &name : nameFind)
+    case FindResults::FOUND_STATION:
+        // can't dereference begin because it invalidates the set's ordering
+        // so this is the only way
+        for (const auto &it : set)
+            out += it;
+        return "Found train by station name: " + out + " and proposed delay of " +
+               deltaStr + " minutes";
+
+    case FindResults::FOUND_NUMBER:
+        return "Found train by number: " + command->at(1) + "and proposed delay of" +
+               deltaStr + " minutes";
+
+    case FindResults::FOUND_MORE_STATIONS:
+        for (const auto &name : set)
             out += name.substr(0, name.size() - 1) + ", ";
         out = out.substr(0, out.size() - 2);
         return "Found multiple matches, please refine your search:\n" + out;
-    }
 
-    auto trainFind = match(trainName, FindBy::TRAIN);
-    if (trainFind.size() == 1)
-        return "Found train number: " + command->at(1);
-    if (trainFind.size() > 1)
-    {
-        std::string out;
-        for (const auto &train : trainFind)
+    case FindResults::FOUND_MORE_NUMBERS:
+        for (const auto &train : set)
             out += train + ", ";
         out = out.substr(0, out.size() - 2);
         return "Found multiple matches, please refine your search:\n" + out;
+
+    case FindResults::FOUND_NONE:
+        return "Found no station name or train number";
+
+    default:
+        LOG_DEBUG("Got unexpected enum value: " + Types::toString<unsigned>((unsigned)res));
+        return "";
     }
-    return "Found no train name or number";
 }
 
 std::string Late::undo()
 {
-    return "late undo";
+    return "Undid delay of " + Types::toString<unsigned>(extractTime(command->back()) / 60) +
+           " minutes";
+}
+
+std::pair<Late::FindResults, std::unordered_set<std::string>> Late::find(const std::string &toFind)
+{
+    auto nameFind = match(toFind, FindBy::CITY);
+
+    if (nameFind.size() == 1)
+    {
+        std::unordered_set<std::string> out;
+        for (const auto &it : nameFind)
+            out.insert(it);
+        return {FindResults::FOUND_STATION, out};
+    }
+    if (nameFind.size() > 1)
+        return {FindResults::FOUND_MORE_STATIONS, nameFind};
+
+    auto trainFind = match(toFind, FindBy::TRAIN);
+    if (trainFind.size() == 1)
+    {
+        std::unordered_set<std::string> out;
+        for (const auto &it : nameFind)
+            out.insert(it);
+        return {FindResults::FOUND_NUMBER, out};
+    }
+    if (trainFind.size() > 1)
+        return {FindResults::FOUND_MORE_NUMBERS, trainFind};
+
+    return {FindResults::FOUND_NONE, {}};
 }

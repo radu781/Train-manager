@@ -69,5 +69,5 @@ std::string Arrivals::execute()
 
 std::string Arrivals::undo()
 {
-    return "arrivals undo";
+    return cannotUndo;
 }

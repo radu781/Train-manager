@@ -44,6 +44,14 @@ CommandParser::CommandTypes CommandParser::validate()
     std::transform(command[0].begin(), command[0].end(), command[0].begin(),
                    tolower);
 
+    bool foundUndo = std::any_of(command.begin(), command.end(), [](const std::string &str)
+                                 { return str == "-u"; });
+    if (foundUndo)
+    {
+        auto it = std::remove(command.begin(), command.end(), "-u");
+        command.erase(it, command.end());
+    }
+
     if (commandRules.contains(command[0]))
     {
         Args pos = commandRules.at(command[0]);
@@ -56,7 +64,11 @@ CommandParser::CommandTypes CommandParser::validate()
 
         if (command.size() - 1 >= pos.mandatory &&
             (pos.optional == -1u || command.size() - 1 <= pos.mandatory + pos.optional))
+        {
+            if (foundUndo)
+                return (CommandTypes)((unsigned int)pos.type + undoEnumOffset);
             return pos.type;
+        }
     }
 
     return CommandTypes::NOT_FOUND;
@@ -88,33 +100,43 @@ std::string CommandParser::execute(Client *client)
 
         case CommandTypes::TODAY:
             icmd = new Today(CommandParser::sharedCmd, &command);
-            out = icmd->execute();
-            delete icmd;
-            return out;
+            return callToExecute(icmd);
 
         case CommandTypes::DEPARTURES:
             icmd = new Departures(CommandParser::sharedCmd, &command);
-            out = icmd->execute();
-            delete icmd;
-            return out;
+            return callToExecute(icmd);
 
         case CommandTypes::ARRIVALS:
             icmd = new Arrivals(CommandParser::sharedCmd, &command);
-            out = icmd->execute();
-            delete icmd;
-            return out;
+            return callToExecute(icmd);
 
         case CommandTypes::LATE:
             icmd = new Late(CommandParser::sharedCmd, &command);
-            out = icmd->execute();
-            delete icmd;
-            return out;
+            return callToExecute(icmd);
 
         case CommandTypes::HELP:
             icmd = new Help(CommandParser::sharedCmd, &command);
-            out = icmd->execute();
-            delete icmd;
-            return out;
+            return callToExecute(icmd);
+
+        case CommandTypes::TODAY_UNDO:
+            icmd = new Today(CommandParser::sharedCmd, &command);
+            return callToUndo(icmd);
+
+        case CommandTypes::DEPARTURES_UNDO:
+            icmd = new Departures(CommandParser::sharedCmd, &command);
+            return callToUndo(icmd);
+
+        case CommandTypes::ARRIVALS_UNDO:
+            icmd = new Arrivals(CommandParser::sharedCmd, &command);
+            return callToUndo(icmd);
+
+        case CommandTypes::LATE_UNDO:
+            icmd = new Late(CommandParser::sharedCmd, &command);
+            return callToUndo(icmd);
+
+        case CommandTypes::HELP_UNDO:
+            icmd = new Help(CommandParser::sharedCmd, &command);
+            return callToUndo(icmd);
 
         default:
             LOG_DEBUG("Unexpected command " + command[0]);
@@ -125,6 +147,20 @@ std::string CommandParser::execute(Client *client)
     {
         return "Command " + command[0] + " not found";
     }
+}
+
+std::string CommandParser::callToExecute(Command *cmd)
+{
+    std::string out = cmd->execute();
+    delete cmd;
+    return out;
+}
+
+std::string CommandParser::callToUndo(Command *cmd)
+{
+    std::string out = cmd->undo();
+    delete cmd;
+    return out;
 }
 
 void CommandParser::getFile()
@@ -170,4 +206,5 @@ void CommandParser::getFile()
         cityNames.insert(WordOperation::removeDiacritics(ele));
 
     sharedCmd->init(&doc, &cityNames, &trainNumbers);
+    LOG_DEBUG("Shared data initialized");
 }

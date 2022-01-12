@@ -63,7 +63,7 @@ std::string Today::execute()
 
 std::string Today::undo()
 {
-    return "";
+    return cannotUndo;
 }
 
 std::pair<std::unordered_set<std::string>, std::unordered_set<std::string>> Today::splitNames()

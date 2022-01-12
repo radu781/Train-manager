@@ -7,7 +7,6 @@
 class CommandParser
 {
 public:
-    static Command *sharedCmd;
     /**
      * @brief Constructs a new Command object, trims it and appends the
      * arguments to the command vector
@@ -22,6 +21,9 @@ public:
      * \return Execution output, both if the command if valid or not
      */
     std::string execute(Client *client);
+
+    std::string callToExecute(Command *cmd);
+    std::string callToUndo(Command *cmd);
 
 private:
     enum class CommandTypes;
@@ -56,6 +58,11 @@ public:
     static std::unordered_set<std::string> cityNames;
     static std::unordered_set<std::string> trainNumbers;
 
+    /**
+     * @brief Variable to be passed to instances of the Command class
+     */
+    static Command *sharedCmd;
+
 private:
     static std::mutex m;
 
@@ -69,10 +76,19 @@ private:
 
         COUNT,
 
+        TODAY_UNDO,
+        DEPARTURES_UNDO,
+        ARRIVALS_UNDO,
+        LATE_UNDO,
+        HELP_UNDO,
+
         NOT_ENOUGH_ARGS,
         TOO_MANY_ARGS,
         NOT_FOUND
     };
+
+    static const unsigned undoEnumOffset = (unsigned)CommandParser::CommandTypes::TODAY_UNDO - (unsigned)CommandParser::CommandTypes::TODAY;
+
     struct Args
     {
         unsigned mandatory;

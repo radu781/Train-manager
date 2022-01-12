@@ -66,5 +66,5 @@ in the following 15 minutes.";
 
 std::string Help::undo()
 {
-    return "help undo";
+    return cannotUndo;
 }

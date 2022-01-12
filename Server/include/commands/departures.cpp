@@ -72,5 +72,5 @@ std::string Departures::execute()
 
 std::string Departures::undo()
 {
-    return "departures undo";
+    return cannotUndo;
 }

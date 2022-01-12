@@ -75,6 +75,11 @@ private:
      */
     static void makeConnection();
 
+    /**
+     * @brief Initialize and reinitialize the thread pool, called when the
+     * instance is first created and then when the thread count drops below a
+     * threshold
+     */
     static void makeThreads();
 
     /**

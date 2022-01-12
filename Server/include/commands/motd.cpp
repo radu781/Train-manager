@@ -43,5 +43,6 @@ Today is %d/%d/%d(%s)",
 
 std::string Motd::undo()
 {
-    return "undo motd";
+    LOG_DEBUG("Unexpected motd undo called");
+    return cannotUndo;
 }
